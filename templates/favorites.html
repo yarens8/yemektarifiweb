@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="favorites-section fade-in">
+        <h2 class="favorites-title text-center mb-5"><i class="fas fa-heart"></i> Favori Tariflerim</h2>
+        {% if favorite_recipes %}
+            <div class="favorites-grid">
+                {% for recipe in favorite_recipes %}
+                <div class="favorites-card">
+                    <div class="favorites-image">
+                        <img src="{{ url_for('static', filename='recipe_images/' + (recipe.image_filename or 'default.jpg')) }}" alt="{{ recipe.title }}">
+                    </div>
+                    <div class="favorites-content">
+                        <span class="favorites-category">{{ recipe.category.name }}</span>
+                        <h3 class="favorites-title-card">{{ recipe.title }}</h3>
+                        <div class="favorites-meta">
+                            <span><i class="fas fa-user"></i> {{ recipe.username }}</span>
+                            <span><i class="fas fa-clock"></i> {{ recipe.cooking_time }}</span>
+                            <span><i class="fas fa-user-friends"></i> {{ recipe.serving_size }}</span>
+                        </div>
+                        <a href="{{ url_for('recipe', id=recipe.id) }}" class="favorites-view-btn">
+                            <i class="fas fa-book-open"></i> Tarifi Görüntüle
+                        </a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <div class="empty-icon">
+                    <i class="fas fa-heart"></i>
+                </div>
+                <h3>Henüz Favori Tarifiniz Yok</h3>
+                <p>Beğendiğiniz tarifleri favorilere ekleyin!</p>
+                <a href="{{ url_for('index') }}" class="btn-add-recipe">
+                    <i class="fas fa-search"></i> Tariflere Göz At
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+.favorites-title {
+    font-size: 2.2rem;
+    font-weight: 700;
+    color: #2d3436;
+    margin-bottom: 2.5rem;
+    letter-spacing: 1px;
+}
+.favorites-title i {
+    color: #FF6B6B;
+    margin-right: 0.7rem;
+}
+.favorites-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 2.5rem;
+    justify-items: center;
+}
+.favorites-card {
+    background: #fff;
+    border-radius: 20px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.10);
+    width: 100%;
+    max-width: 370px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transition: box-shadow 0.3s, transform 0.3s;
+    min-height: 420px;
+}
+.favorites-card:hover {
+    box-shadow: 0 8px 32px rgba(255,107,107,0.18);
+    transform: translateY(-4px) scale(1.03);
+}
+.favorites-image {
+    width: 100%;
+    height: 210px;
+    overflow: hidden;
+    background: #f8f8fa;
+}
+.favorites-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+.favorites-content {
+    padding: 1.3rem 1.3rem 2.2rem 1.3rem;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+.favorites-category {
+    background: #f3eaff;
+    color: #7c4dff;
+    padding: 0.2rem 0.9rem;
+    border-radius: 12px;
+    font-size: 0.92rem;
+    font-weight: 500;
+    margin-bottom: 0.7rem;
+    display: inline-block;
+}
+.favorites-title-card {
+    font-size: 1.18rem;
+    font-weight: 700;
+    color: #2d3436;
+    margin-bottom: 0.7rem;
+    margin-top: 0.2rem;
+    line-height: 1.2;
+}
+.favorites-meta {
+    display: flex;
+    gap: 1.1rem;
+    color: #888;
+    font-size: 0.98rem;
+    margin-bottom: 1.1rem;
+    flex-wrap: wrap;
+}
+.favorites-meta i {
+    color: #FF6B6B;
+    margin-right: 0.3rem;
+}
+.favorites-view-btn {
+    background: #FF6B6B;
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    padding: 0.35rem 0.9rem;
+    font-size: 0.97rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+    box-shadow: 0 2px 8px rgba(255,107,107,0.07);
+    width: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-top: auto;
+    text-decoration: none;
+    align-self: flex-end;
+}
+.favorites-view-btn:hover {
+    background: #ff5252;
+    color: #fff;
+}
+@media (max-width: 900px) {
+    .favorites-grid {
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 1.2rem;
+    }
+    .favorites-card {
+        max-width: 98vw;
+    }
+    .favorites-image {
+        height: 150px;
+    }
+}
+</style>
+{% endblock %} 

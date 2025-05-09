@@ -1,0 +1,464 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="category-container fade-in">
+    <div class="category-header">
+        <div class="category-title-wrapper">
+            <h1 class="category-title">
+                <i class="fas fa-tag"></i>
+                <span>{{ category.name }}</span>
+            </h1>
+        </div>
+    </div>
+
+    <!-- Arama Çubuğu -->
+    <div class="search-section">
+        <div class="search-container">
+            <form action="{{ url_for('search') }}" method="get" class="search-form">
+                <div class="search-wrapper">
+                    <div class="search-input-container">
+                        <i class="fas fa-search search-icon"></i>
+                        <input type="text" 
+                               name="q" 
+                               class="search-input" 
+                               placeholder="Bu kategoride ara..." 
+                               value="{{ request.args.get('q', '') }}"
+                               autocomplete="off">
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="recipes-grid">
+        {% for recipe in recipes %}
+        <div class="recipe-card">
+            {% if recipe.image_filename %}
+            <div class="recipe-image">
+                <img src="{{ url_for('static', filename='recipe_images/' + recipe.image_filename) }}" 
+                     alt="{{ recipe.title }}">
+                <div class="recipe-overlay">
+                    <div class="recipe-meta">
+                        <span class="recipe-views">
+                            <i class="fas fa-eye"></i> {{ recipe.views }}
+                        </span>
+                        <span class="recipe-date">
+                            <i class="fas fa-calendar"></i> {{ recipe.created_at.strftime('%d.%m.%Y') }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="recipe-image">
+                <img src="{{ url_for('static', filename='images/default-recipe.jpg') }}" alt="{{ recipe.title }}" class="recipe-image">
+                <div class="recipe-overlay">
+                    <div class="recipe-meta">
+                        <span class="recipe-views">
+                            <i class="fas fa-eye"></i> {{ recipe.views }}
+                        </span>
+                        <span class="recipe-date">
+                            <i class="fas fa-calendar"></i> {{ recipe.created_at.strftime('%d.%m.%Y') }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            <div class="recipe-content">
+                <span class="recipe-category">{{ recipe.category.name }}</span>
+                <h3 class="recipe-title">{{ recipe.title }}</h3>
+                <div class="recipe-author">
+                    <i class="fas fa-user"></i>
+                    {{ recipe.username }}
+                </div>
+                <div class="recipe-details">
+                    <div class="recipe-info">
+                        {% if recipe.preparation_time %}
+                        <span class="info-item">
+                            <i class="fas fa-clock"></i>
+                            <span>{{ recipe.preparation_time }}</span>
+                        </span>
+                        {% endif %}
+                        {% if recipe.serving_size %}
+                        <span class="info-item">
+                            <i class="fas fa-users"></i>
+                            <span>{{ recipe.serving_size }}</span>
+                        </span>
+                        {% endif %}
+                    </div>
+                    <p class="recipe-excerpt">
+                        {{ recipe.ingredients[:100] }}{% if recipe.ingredients|length > 100 %}...{% endif %}
+                    </p>
+                </div>
+                <div class="recipe-footer">
+                    <a href="{{ url_for('recipe', id=recipe.id) }}" class="btn-view">
+                        Tarifi Görüntüle <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% if not recipes %}
+    <div class="empty-category">
+        <div class="empty-icon">
+            <i class="fas fa-utensils"></i>
+        </div>
+        <h3>Bu Kategoride Henüz Tarif Yok</h3>
+        <p>İlk tarifi ekleyerek trend belirleyici olabilirsiniz!</p>
+        {% if current_user.is_authenticated %}
+            <a href="{{ url_for('add_recipe') }}" class="btn-add">
+                <i class="fas fa-plus-circle"></i> Hemen Tarif Ekle
+            </a>
+        {% else %}
+            <div class="auth-prompt">
+                <p>Tarif eklemek için üye olmanız gerekiyor</p>
+                <a href="{{ url_for('register') }}" class="btn-register">
+                    <i class="fas fa-user-plus"></i> Üye Ol
+                </a>
+            </div>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+
+<style>
+:root {
+    --gradient-1: linear-gradient(120deg, #FF8C8C 0%, #FF6B6B 100%);
+    --gradient-2: linear-gradient(120deg, #FFB6B6 0%, #FF8C8C 100%);
+    --gradient-3: linear-gradient(120deg, #FFC8C8 0%, #FFB6B6 100%);
+    --shadow-color: rgba(255, 108, 108, 0.15);
+}
+
+.category-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.category-header {
+    text-align: center;
+    margin-bottom: 3rem;
+    padding: 2rem;
+    background: linear-gradient(135deg, #f8f9fe 0%, #fff 100%);
+    border-radius: 24px;
+    box-shadow: 0 8px 20px var(--shadow-color);
+}
+
+.category-title-wrapper {
+    display: inline-block;
+    padding: 0.5rem 2rem;
+    background: white;
+    border-radius: 50px;
+    box-shadow: 0 4px 12px var(--shadow-color);
+}
+
+.category-title {
+    font-size: 2.2rem;
+    margin: 0;
+    background: var(--gradient-1);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.category-title i {
+    font-size: 1.8rem;
+}
+
+.recipes-grid {
+    display: grid;
+    gap: 2.5rem;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+}
+
+.recipe-card {
+    background: white;
+    border-radius: 24px;
+    overflow: hidden;
+    box-shadow: 0 12px 24px var(--shadow-color);
+    transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+    position: relative;
+}
+
+.recipe-card:hover {
+    transform: translateY(-12px) scale(1.02);
+    box-shadow: 0 20px 40px var(--shadow-color);
+}
+
+.recipe-image {
+    width: 100%;
+    height: 280px;
+    position: relative;
+    overflow: hidden;
+}
+
+.recipe-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.6s cubic-bezier(0.165, 0.84, 0.44, 1);
+}
+
+.recipe-card:hover .recipe-image img {
+    transform: scale(1.1);
+}
+
+.recipe-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.7) 100%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    display: flex;
+    align-items: flex-end;
+    padding: 1.5rem;
+}
+
+.recipe-card:hover .recipe-overlay {
+    opacity: 1;
+}
+
+.recipe-meta {
+    display: flex;
+    gap: 1.5rem;
+    color: white;
+    font-size: 0.9rem;
+}
+
+.recipe-meta i {
+    margin-right: 0.3rem;
+}
+
+.recipe-content {
+    padding: 1.8rem;
+    background: linear-gradient(to bottom, white 0%, #fff8f8 100%);
+}
+
+.recipe-title {
+    font-size: 1.5rem;
+    color: #333;
+    margin-bottom: 1.2rem;
+    line-height: 1.4;
+    font-weight: 600;
+    transition: color 0.3s ease;
+}
+
+.recipe-card:hover .recipe-title {
+    background: var(--gradient-1);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.recipe-details {
+    margin-bottom: 1.5rem;
+}
+
+.recipe-info {
+    display: flex;
+    gap: 1.5rem;
+    margin-bottom: 1rem;
+    padding: 1rem;
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+}
+
+.info-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #666;
+    font-size: 0.95rem;
+}
+
+.info-item i {
+    background: var(--gradient-1);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-size: 1.1rem;
+}
+
+.recipe-excerpt {
+    color: #666;
+    font-size: 0.95rem;
+    line-height: 1.6;
+    margin-top: 1rem;
+}
+
+.recipe-footer {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.btn-view {
+    background: var(--gradient-2);
+    color: white;
+    text-decoration: none;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.8rem 1.5rem;
+    border-radius: 50px;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(255, 108, 108, 0.2);
+}
+
+.btn-view:hover {
+    background: var(--gradient-1);
+    color: white;
+    box-shadow: 0 6px 16px rgba(255, 108, 108, 0.3);
+}
+
+.btn-view i {
+    transition: transform 0.3s ease;
+}
+
+.btn-view:hover i {
+    transform: translateX(5px);
+}
+
+.empty-category {
+    text-align: center;
+    padding: 4rem 2rem;
+    background: white;
+    border-radius: 24px;
+    box-shadow: 0 8px 20px var(--shadow-color);
+}
+
+.empty-icon {
+    font-size: 3rem;
+    margin-bottom: 1.5rem;
+    color: var(--primary-pink);
+}
+
+.empty-category h3 {
+    font-size: 1.8rem;
+    color: #333;
+    margin-bottom: 1rem;
+}
+
+.empty-category p {
+    color: #666;
+    margin-bottom: 2rem;
+}
+
+.btn-add, .btn-register {
+    background: var(--gradient-1);
+    color: white;
+    text-decoration: none;
+    padding: 1rem 2rem;
+    border-radius: 50px;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(255, 108, 108, 0.2);
+}
+
+.btn-add:hover, .btn-register:hover {
+    background: var(--gradient-2);
+    color: white;
+    transform: translateY(-3px);
+    box-shadow: 0 6px 16px rgba(255, 108, 108, 0.3);
+}
+
+.auth-prompt {
+    margin-top: 2rem;
+}
+
+@media (max-width: 768px) {
+    .category-container {
+        padding: 1rem;
+    }
+
+    .category-header {
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .category-title {
+        font-size: 1.8rem;
+    }
+
+    .recipes-grid {
+        grid-template-columns: 1fr;
+        gap: 2rem;
+    }
+
+    .recipe-card {
+        margin: 0 auto;
+        max-width: 400px;
+    }
+
+    .recipe-info {
+        flex-direction: column;
+        gap: 0.8rem;
+    }
+}
+
+/* Arama Çubuğu Stilleri */
+.search-section {
+    margin: 2rem 0;
+    padding: 0 1rem;
+}
+
+.search-container {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.search-form {
+    width: 100%;
+}
+
+.search-wrapper {
+    background: white;
+    border-radius: 50px;
+    padding: 0.5rem;
+    box-shadow: 0 4px 12px var(--shadow-color);
+    transition: all 0.3s ease;
+}
+
+.search-wrapper:focus-within {
+    box-shadow: 0 8px 24px var(--shadow-color);
+    transform: translateY(-2px);
+}
+
+.search-input-container {
+    display: flex;
+    align-items: center;
+    padding: 0.5rem 1.5rem;
+}
+
+.search-icon {
+    color: #FF6B6B;
+    font-size: 1.2rem;
+    margin-right: 1rem;
+}
+
+.search-input {
+    border: none;
+    background: none;
+    font-size: 1rem;
+    color: #333;
+    width: 100%;
+    padding: 0.5rem 0;
+}
+
+.search-input:focus {
+    outline: none;
+}
+
+.search-input::placeholder {
+    color: #999;
+}
+</style>
+{% endblock %}

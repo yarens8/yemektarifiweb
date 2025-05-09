@@ -1,0 +1,1669 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!-- CSRF Token -->
+<meta name="csrf-token" content="{{ csrf_token() }}">
+
+<!-- Appearance CSS -->
+<style>
+    :root {
+        --appearance-bg: {{ 'var(--dark-bg)' if current_user.is_authenticated and current_user.appearance == 'dark' else 'var(--light-bg)' }};
+        --appearance-text: {{ 'var(--dark-text)' if current_user.is_authenticated and current_user.appearance == 'dark' else 'var(--light-text)' }};
+        --appearance-border: {{ 'var(--dark-border)' if current_user.is_authenticated and current_user.appearance == 'dark' else 'var(--light-border)' }};
+    }
+
+    body {
+        background-color: var(--appearance-bg);
+        color: var(--appearance-text);
+    }
+
+    .recipe-card, .filter-content, .ingredient-input-group {
+        background-color: var(--appearance-bg);
+        border-color: var(--appearance-border);
+    }
+</style>
+
+<!-- Debug Messages -->
+<div style="display: none;">
+    <p>Categories: {{ categories|length }}</p>
+    <p>Popular Recipes: {{ popular_recipes|length }}</p>
+    <p>All Recipes: {{ all_recipes|length }}</p>
+</div>
+
+<!-- Hero Section -->
+<div class="hero-section fade-in">
+    <div class="hero-content">
+        <h1>En Lezzetli Tarifler Burada!</h1>
+        <p>Binlerce tarif arasından favorinizi seçin ve mutfağınızda harikalar yaratın.</p>
+        {% if not current_user.is_authenticated %}
+        <div class="hero-buttons">
+            <a href="{{ url_for('register') }}" class="btn btn-custom btn-lg">
+                <i class="fas fa-user-plus"></i> Hemen Üye Ol
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Malzeme Seçimi ve Tarif Önerisi -->
+<div class="ingredient-suggestion-section fade-in">
+    <div class="section-header">
+        <div class="cooking-animation">
+            <div class="pan">
+                <div class="pan-body">
+                    <div class="food-particle">
+                        <i class="fas fa-apple-alt"></i>
+                    </div>
+                    <div class="food-particle">
+                        <i class="fas fa-pepper-hot"></i>
+                    </div>
+                    <div class="food-particle">
+                        <i class="fas fa-carrot"></i>
+                    </div>
+                </div>
+                <div class="handle-right"></div>
+                <div class="steam"></div>
+            </div>
+        </div>
+        <div class="handle-right"></div>
+        <div class="steam"></div>
+    </div>
+    
+    <div class="ingredient-selection-container">
+        <!-- Malzeme Kategorileri -->
+        <div class="categories-wheel">
+            <div class="categories-circle" id="ingredientCategories">
+                <!-- Kategoriler JavaScript ile doldurulacak -->
+            </div>
+        </div>
+
+        <!-- Malzeme Arama ve Ekleme -->
+        <div class="ingredient-input-group">
+            <div class="magical-input">
+                <input type="text" id="ingredientInput" placeholder="Malzeme eklemek için yazın..." autocomplete="off">
+                <div class="magical-effects">
+                    <div class="sparkle"></div>
+                    <div class="sparkle"></div>
+                    <div class="sparkle"></div>
+                </div>
+                <button id="addIngredient" class="btn-add-ingredient">
+                    <i class="fas fa-magic"></i>
+                </button>
+            </div>
+            <div class="ingredient-suggestions floating-panel" id="ingredientSuggestions">
+                <!-- Önerilen malzemeler JavaScript ile doldurulacak -->
+            </div>
+        </div>
+
+        <!-- Seçilen Malzemeler -->
+        <div class="cooking-pot">
+            <div class="pot-lid"></div>
+            <div class="steam"></div>
+            <div class="selected-ingredients" id="selectedIngredients">
+                <!-- Seçilen malzemeler buraya eklenecek -->
+            </div>
+            <div class="pot-handles">
+                <div class="handle left"></div>
+                <div class="handle right"></div>
+            </div>
+        </div>
+
+        <!-- Filtreler -->
+        <div class="recipe-filters">
+            <div class="filter-header">
+                <h3>Tarif Filtreleri</h3>
+                <div class="filter-controls">
+                    <button class="btn-toggle-filters" id="toggleFilters">
+                        <i class="fas fa-sliders-h"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="filter-content" id="filterContent">
+                <div class="filter-group">
+                    <label>
+                        <i class="fas fa-utensils"></i>
+                        <span>Yemek Türü</span>
+                    </label>
+                    <select id="categoryFilter" class="form-select">
+                        <option value="">Tümü</option>
+                        {% for category in categories %}
+                        <option value="{{ category.id }}">{{ category.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>
+                        <i class="fas fa-clock"></i>
+                        <span>Pişirme Süresi</span>
+                    </label>
+                    <select id="cookingTimeFilter" class="form-select">
+                        <option value="">Tümü</option>
+                        <option value="15">15 dakika veya az</option>
+                        <option value="30">30 dakika veya az</option>
+                        <option value="45">45 dakika veya az</option>
+                        <option value="60">1 saat veya az</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>
+                        <i class="fas fa-users"></i>
+                        <span>Porsiyon</span>
+                    </label>
+                    <select id="servingSizeFilter" class="form-select">
+                        <option value="">Tümü</option>
+                        <option value="1-2">1-2 Kişilik</option>
+                        <option value="3-4">3-4 Kişilik</option>
+                        <option value="5-6">5-6 Kişilik</option>
+                        <option value="6+">6+ Kişilik</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        
+        <button type="button" id="findRecipes" class="btn-find-recipes">
+            <span class="btn-text">Tarifleri Keşfet</span>
+            <div class="btn-animation">
+                <div class="circle"></div>
+                <div class="circle"></div>
+                <div class="circle"></div>
+            </div>
+        </button>
+    </div>
+    
+    <div id="suggestedRecipes" class="suggested-recipes"></div>
+</div>
+
+<!-- Category Filter -->
+<div class="category-filter fade-in">
+    <h3><i class="fas fa-filter"></i> Kategoriler</h3>
+    <div class="category-buttons">
+        {% for category in categories %}
+        <a href="{{ url_for('category_view', category_id=category.id) }}" class="btn category-btn">
+            <i class="fas fa-tag"></i>
+            <span>{{ category.name }}</span>
+        </a>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Popüler Tarifler Section -->
+{% if popular_recipes %}
+<div class="popular-recipes fade-in">
+    <div class="section-header">
+        <h2 class="section-title">
+            <i class="fas fa-star"></i> En Çok Görüntülenen Tarifler
+        </h2>
+    </div>
+    <div class="recipes-grid">
+        {% for recipe in popular_recipes %}
+        <div class="recipe-card">
+            <img src="{{ url_for('static', filename='recipe_images/' + recipe.image_filename) if recipe.image_filename else url_for('static', filename='recipe_images/default.jpg') }}" alt="{{ recipe.title }}" class="recipe-image">
+            <div class="recipe-content">
+                <span class="recipe-category">{{ recipe.category.name }}</span>
+                <h3 class="recipe-title">{{ recipe.title }}</h3>
+                <div class="recipe-author">
+                    <i class="fas fa-user"></i>
+                    {{ recipe.username }}
+                </div>
+                <div class="recipe-info">
+                    <span class="info-item">
+                        <i class="fas fa-clock"></i>
+                        {{ recipe.cooking_time }}
+                    </span>
+                    <span class="info-item">
+                        <i class="fas fa-user-friends"></i>
+                        {{ recipe.serving_size }}
+                    </span>
+                </div>
+                <div class="recipe-footer">
+                    <a href="{{ url_for('recipe', id=recipe.id) }}" class="btn-view">
+                        Tarifi Görüntüle <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Tüm Tarifler Section -->
+{% if all_recipes %}
+<div class="all-recipes fade-in">
+    <div class="section-header">
+        <h2 class="section-title">
+            <i class="fas fa-utensils"></i> Tüm Tarifler
+        </h2>
+    </div>
+    <div class="recipes-grid">
+        {% for recipe in all_recipes %}
+        <div class="recipe-card">
+            <img src="{{ url_for('static', filename='recipe_images/' + recipe.image_filename) if recipe.image_filename else url_for('static', filename='images/default-recipe.jpg') }}" alt="{{ recipe.title }}" class="recipe-image">
+            <div class="recipe-content">
+                <span class="recipe-category">{{ recipe.category.name }}</span>
+                <h3 class="recipe-title">{{ recipe.title }}</h3>
+                <div class="recipe-author">
+                    <i class="fas fa-user"></i>
+                    {{ recipe.username }}
+                </div>
+                <div class="recipe-info">
+                    <span class="info-item">
+                        <i class="fas fa-clock"></i>
+                        {{ recipe.cooking_time }}
+                    </span>
+                    <span class="info-item">
+                        <i class="fas fa-user-friends"></i>
+                        {{ recipe.serving_size }}
+                    </span>
+                </div>
+                <div class="recipe-footer">
+                    <a href="{{ url_for('recipe', id=recipe.id) }}" class="btn-view">
+                        Tarifi Görüntüle <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+{% if not popular_recipes and not all_recipes %}
+<div class="empty-category fade-in">
+    <div class="empty-animation">
+        <i class="fas fa-book-open"></i>
+    </div>
+    <h3>Henüz Hiç Tarif Yok</h3>
+    <p>İlk tarifi ekleyerek trend belirleyici olabilirsiniz!</p>
+    {% if current_user.is_authenticated %}
+        <a href="{{ url_for('add_recipe') }}" class="btn btn-custom btn-lg mt-3">
+            <i class="fas fa-plus-circle"></i> Hemen Tarif Ekle
+        </a>
+    {% else %}
+        <div class="mt-4">
+            <p>Tarif eklemek için üye olmanız gerekiyor</p>
+            <a href="{{ url_for('register') }}" class="btn btn-custom me-2">
+                <i class="fas fa-user-plus"></i> Üye Ol
+            </a>
+        </div>
+    {% endif %}
+</div>
+{% endif %}
+
+<style>
+:root {
+    --primary-color: #FF6B6B;
+    --secondary-color: #4ECDC4;
+    --accent-color: #FFE66D;
+    --dark-color: #2C3E50;
+    --light-color: #F7F9FC;
+    --success-color: #2ECC71;
+    --warning-color: #F1C40F;
+    --gradient-primary: linear-gradient(135deg, #FF6B6B, #FF8E8E);
+    --gradient-secondary: linear-gradient(135deg, #4ECDC4, #45B7AC);
+    --gradient-accent: linear-gradient(135deg, #FFE66D, #FFD93D);
+    --shadow-sm: 0 2px 4px rgba(0,0,0,0.05);
+    --shadow-md: 0 4px 6px rgba(0,0,0,0.1);
+    --shadow-lg: 0 10px 15px rgba(0,0,0,0.1);
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 20px;
+    --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.hero-section {
+    background: var(--gradient-1);
+    padding: 4rem 2rem;
+    text-align: center;
+    color: white;
+    border-radius: 24px;
+    margin-bottom: 3rem;
+    box-shadow: 0 12px 24px var(--shadow-color);
+}
+
+.hero-content h1 {
+    font-size: 3rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+}
+
+.hero-content p {
+    font-size: 1.2rem;
+    margin-bottom: 2rem;
+    opacity: 0.9;
+}
+
+.btn-custom {
+    background: white;
+    color: #FF6B6B;
+    border: none;
+    padding: 0.8rem 2rem;
+    border-radius: 50px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.btn-custom:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0,0,0,0.15);
+    background: #fff;
+    color: #FF5252;
+}
+
+.category-filter {
+    margin-bottom: 3rem;
+    padding: 2rem;
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 8px 16px var(--shadow-color);
+}
+
+.category-filter h3 {
+    font-size: 1.5rem;
+    color: #333;
+    margin-bottom: 1.5rem;
+}
+
+.category-filter h3 i {
+    color: #FF6B6B;
+    margin-right: 0.5rem;
+}
+
+.category-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.category-btn {
+    background: white;
+    border: 2px solid #FF6B6B;
+    color: #FF6B6B;
+    padding: 0.6rem 1.2rem;
+    border-radius: 50px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.category-btn:hover {
+    background: var(--gradient-1);
+    color: white;
+    border-color: transparent;
+    transform: translateY(-2px);
+}
+
+.section-header {
+    text-align: center;
+    margin-bottom: 3rem;
+    position: relative;
+}
+
+.section-title {
+    font-size: 2.2rem;
+    color: #333;
+    display: inline-block;
+    padding-bottom: 1rem;
+    position: relative;
+    font-weight: 600;
+}
+
+.section-title i {
+    background: var(--gradient-1);
+    -webkit-background-clip: text;
+    -moz-background-clip: text;
+    -o-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    -webkit-text-fill-color: transparent;
+    margin-right: 0.5rem;
+}
+
+.section-title:after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60%;
+    height: 4px;
+    background: var(--gradient-1);
+    border-radius: 4px;
+}
+
+.recipes-grid {
+    display: grid;
+    gap: 2rem;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    padding: 1.5rem;
+}
+
+.recipe-card {
+    background: white;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.08);
+    transition: all 0.3s ease;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    border: 1px solid rgba(0,0,0,0.05);
+}
+
+.recipe-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 30px rgba(0,0,0,0.12);
+}
+
+.recipe-image {
+    width: 100%;
+    height: 200px;
+    position: relative;
+    overflow: hidden;
+}
+
+.recipe-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.recipe-card:hover .recipe-image img {
+    transform: scale(1.05);
+}
+
+.recipe-category {
+    position: absolute;
+    top: 1rem;
+    left: 1rem;
+    background: rgba(255,107,107,0.95);
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 30px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    backdrop-filter: blur(5px);
+    box-shadow: 0 2px 8px rgba(255,107,107,0.3);
+}
+
+.recipe-content {
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    flex: 1;
+}
+
+.recipe-title {
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: #2C3E50;
+    margin: 0;
+    line-height: 1.4;
+}
+
+.recipe-author {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #666;
+    font-size: 0.9rem;
+}
+
+.recipe-author i {
+    color: #FF6B6B;
+}
+
+.recipe-info {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    padding: 1rem;
+    background: #f8f9fa;
+    border-radius: 12px;
+    margin-top: auto;
+}
+
+.info-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #666;
+    font-size: 0.9rem;
+}
+
+.info-item i {
+    color: #FF6B6B;
+}
+
+.recipe-footer {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid #eee;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.btn-view {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: linear-gradient(to bottom, #ffe8ea, white);
+    color: #FF6B6B;
+    padding: 0.7rem 1.2rem;
+    border-radius: 30px;
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 0.95rem;
+    transition: all 0.3s ease;
+    border: 1px solid #ffd8dc;
+}
+
+.btn-view:hover {
+    background: linear-gradient(to bottom, #ffeff1, white);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(255, 182, 193, 0.2);
+}
+
+.btn-view i {
+    transition: transform 0.3s ease;
+    color: #FF6B6B;
+}
+
+.empty-category {
+    text-align: center;
+    padding: 4rem 2rem;
+    background: white;
+    border-radius: 24px;
+    box-shadow: 0 12px 24px var(--shadow-color);
+}
+
+.empty-animation {
+    font-size: 4rem;
+    color: #FF6B6B;
+    margin-bottom: 2rem;
+    animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+    0% { transform: translateY(0px); }
+    50% { transform: translateY(-20px); }
+    100% { transform: translateY(0px); }
+}
+
+.fade-in {
+    animation: fadeIn 0.8s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 768px) {
+    .hero-content h1 {
+        font-size: 2rem;
+    }
+    
+    .hero-content p {
+        font-size: 1rem;
+    }
+    
+    .recipes-grid {
+        grid-template-columns: 1fr;
+        gap: 2rem;
+        padding: 0.5rem;
+    }
+    
+    .recipe-card {
+        margin: 0 auto;
+        max-width: 400px;
+    }
+
+    .section-title {
+        font-size: 1.8rem;
+    }
+
+    .recipe-info {
+        flex-direction: column;
+        gap: 0.8rem;
+    }
+}
+
+.ingredient-suggestion-section {
+    background: var(--light-color);
+    border-radius: var(--radius-lg);
+    padding: 3rem;
+    margin: 2rem auto;
+    max-width: 1200px;
+    position: relative;
+    overflow: hidden;
+}
+
+.cooking-animation {
+    position: relative;
+    width: 300px;
+    height: 150px;
+    margin: 20px auto;
+    perspective: 1000px;
+}
+
+.pan {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    transform-style: preserve-3d;
+    animation: cook 3s ease-in-out infinite;
+}
+
+.pan-body {
+    position: absolute;
+    width: 260px;
+    height: 90px;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%) perspective(800px) rotateX(60deg);
+    background: linear-gradient(45deg, #7f8c8d, #95a5a6);
+    border-radius: 130px;
+    box-shadow: 
+        inset 0 8px 20px rgba(255,255,255,0.3),
+        0 12px 20px rgba(0,0,0,0.3);
+    overflow: visible;
+}
+
+/* Tava kenarı */
+.pan-body::before {
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 15px;
+    top: 0;
+    left: 0;
+    background: #6c7a7a;
+    border-radius: 100px 100px 0 0;
+}
+
+/* Ahşap sap */
+.handle-right {
+    position: absolute;
+    width: 100px;
+    height: 20px;
+    right: -80px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: linear-gradient(45deg, #d35400, #e67e22);
+    border-radius: 10px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+/* Yemek parçacıkları */
+.food-particle {
+    position: absolute;
+    font-size: 36px;
+    animation: float-3d 2.5s infinite ease-in-out;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 45px;
+    height: 45px;
+    filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));
+    transform-style: preserve-3d;
+    perspective: 1000px;
+    top: -20px;
+}
+
+.food-particle:nth-child(1) {
+    left: 25%;
+    animation-delay: 0s;
+    color: #e74c3c;
+    transform: translateZ(20px) rotateX(-35deg);
+}
+
+.food-particle:nth-child(2) {
+    left: 50%;
+    animation-delay: 0.4s;
+    color: #27ae60;
+    transform: translateZ(20px) rotateX(-35deg);
+}
+
+.food-particle:nth-child(3) {
+    left: 75%;
+    animation-delay: 0.8s;
+    color: #2ecc71;
+    transform: translateZ(20px) rotateX(-35deg);
+}
+
+@keyframes float-3d {
+    0%, 100% {
+        transform: translateY(0) translateZ(20px) rotateX(-35deg) rotateY(0);
+        filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));
+    }
+    50% {
+        transform: translateY(-80px) translateZ(40px) rotateX(-45deg) rotateY(180deg);
+        filter: drop-shadow(0 8px 16px rgba(0,0,0,0.4));
+    }
+}
+
+/* Geliştirilmiş buhar efekti */
+.steam {
+    position: absolute;
+    top: -30px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 200px;
+    height: 60px;
+    display: flex;
+    justify-content: space-between;
+    opacity: 0.8;
+    z-index: 2;
+}
+
+.steam::before,
+.steam::after {
+    content: '';
+    width: 15px;
+    height: 60px;
+    background: white;
+    border-radius: 10px;
+    filter: blur(10px);
+    animation: steam 2s infinite;
+    opacity: 0.6;
+}
+
+.steam::before { 
+    transform: translateX(-40px) rotate(-5deg); 
+    animation-delay: 0.3s;
+}
+
+.steam::after { 
+    transform: translateX(40px) rotate(5deg);
+    animation-delay: 0.6s;
+}
+
+/* Orta buhar sütunu */
+.steam::nth-child(2) {
+    content: '';
+    position: absolute;
+    width: 15px;
+    height: 60px;
+    background: white;
+    border-radius: 10px;
+    filter: blur(10px);
+    animation: steam 2s infinite 0.9s;
+    opacity: 0.6;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+@keyframes cook {
+    0%, 100% {
+        transform: rotate(-5deg);
+    }
+    50% {
+        transform: rotate(5deg);
+    }
+}
+
+@keyframes steam {
+    0% {
+        transform: translateY(0) scale(1);
+        opacity: 0.8;
+    }
+    50% {
+        transform: translateY(-30px) scale(1.5);
+        opacity: 0.5;
+    }
+    100% {
+        transform: translateY(-60px) scale(1);
+        opacity: 0;
+    }
+}
+
+.categories-wheel {
+    position: relative;
+    width: 100%;
+    height: auto;
+    margin-bottom: 2rem;
+    padding: 1rem 0;
+}
+
+.categories-circle {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    padding: 0.5rem;
+    justify-content: center;
+}
+
+.category-chip {
+    flex: 0 0 auto;
+    padding: 0.8rem 1.2rem;
+    background: white;
+    border-radius: 50px;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    cursor: pointer;
+    transition: var(--transition);
+    box-shadow: var(--shadow-sm);
+    border: 2px solid transparent;
+    font-size: 0.95rem;
+}
+
+.category-chip:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.category-chip.active {
+    background: var(--gradient-primary);
+    color: white;
+    border-color: white;
+}
+
+.magical-input {
+    position: relative;
+    margin-bottom: 1.5rem;
+}
+
+.magical-input input {
+    width: 100%;
+    padding: 1.2rem 4rem 1.2rem 1.5rem;
+    border: 2px solid transparent;
+    border-radius: var(--radius-lg);
+    background: white;
+    font-size: 1rem;
+    transition: var(--transition);
+    box-shadow: var(--shadow-sm);
+}
+
+.magical-input input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 4px rgba(255,107,107,0.1);
+}
+
+.magical-effects {
+    position: absolute;
+    top: 50%;
+    right: 60px;
+    transform: translateY(-50%);
+}
+
+.sparkle {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    background: var(--accent-color);
+    border-radius: 50%;
+    opacity: 0;
+}
+
+.sparkle:nth-child(1) { animation: sparkle 2s infinite; }
+.sparkle:nth-child(2) { animation: sparkle 2s infinite 0.4s; }
+.sparkle:nth-child(3) { animation: sparkle 2s infinite 0.8s; }
+
+.btn-add-ingredient {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: none;
+    background: var(--gradient-primary);
+    color: white;
+    cursor: pointer;
+    transition: var(--transition);
+    box-shadow: var(--shadow-md);
+}
+
+.btn-add-ingredient:hover {
+    transform: translateY(-50%) scale(1.1);
+    box-shadow: var(--shadow-lg);
+}
+
+.cooking-pot {
+    position: relative;
+    background: linear-gradient(45deg, #34495E, #2C3E50);
+    border-radius: 40px 40px 100px 100px;
+    padding: 2rem;
+    margin: 4rem auto;
+    width: 800px;
+    min-height: 160px;
+    box-shadow: 
+        inset 0 10px 20px rgba(255,255,255,0.1),
+        0 15px 30px rgba(0,0,0,0.2);
+    border: 2px solid #2C3E50;
+    z-index: 1;
+}
+
+/* Ateş efekti */
+.cooking-pot::before {
+    content: '';
+    position: absolute;
+    bottom: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 300px;
+    height: 40px;
+    background: linear-gradient(45deg, #ff4d4d 0%, #ff9933 50%, #ffcc00 100%);
+    border-radius: 50%;
+    filter: blur(20px);
+    animation: flame 1.5s ease-in-out infinite alternate;
+    opacity: 0.9;
+    z-index: -1;
+}
+
+@keyframes flame {
+    0% {
+        transform: translateX(-50%) scaleX(1) scaleY(1);
+        opacity: 0.9;
+        filter: blur(20px);
+        background: linear-gradient(45deg, #ff4d4d 0%, #ff9933 50%, #ffcc00 100%);
+    }
+    100% {
+        transform: translateX(-50%) scaleX(1.2) scaleY(1.1);
+        opacity: 1;
+        filter: blur(25px);
+        background: linear-gradient(45deg, #ff3300 0%, #ff6600 50%, #ff9933 100%);
+    }
+}
+
+/* Kapak tutma yeri */
+.pot-lid, .pot-lid::after {
+    display: none;
+}
+
+.pot-handles {
+    position: absolute;
+    width: 100%;
+    top: 30%;
+    left: 0;
+    pointer-events: none;
+}
+
+.handle {
+    position: absolute;
+    width: 45px;
+    height: 60px;
+    border: 12px solid #c0392b;
+    border-radius: 30px;
+    background: linear-gradient(45deg, #d35400, #e67e22);
+    box-shadow: 0 5px 10px rgba(0,0,0,0.2);
+}
+
+.handle.left {
+    left: -25px;
+    border-right: none;
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+.handle.right {
+    right: -25px;
+    border-left: none;
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+}
+
+.selected-ingredients {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.8rem;
+    min-height: 100px;
+    padding: 1rem;
+    background: rgba(255,255,255,0.05);
+    border-radius: 20px;
+    backdrop-filter: blur(5px);
+}
+
+.ingredient-tag {
+    background: white;
+    color: #2C3E50;
+    padding: 0.5rem 1rem;
+    border-radius: 50px;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+    animation: popIn 0.3s ease-out;
+}
+
+.ingredient-tag:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.ingredient-tag button {
+    background: none;
+    border: none;
+    color: #FF6B6B;
+    cursor: pointer;
+    padding: 0;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+}
+
+.ingredient-tag button:hover {
+    background: #FF6B6B;
+    color: white;
+    transform: rotate(90deg);
+}
+
+.recipe-filters {
+    background: white;
+    border-radius: var(--radius-lg);
+    padding: 2rem;
+    margin: 2rem 0;
+    box-shadow: var(--shadow-md);
+}
+
+.filter-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+.filter-content {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 2rem;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.filter-group label {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    color: var(--dark-color);
+    font-weight: 500;
+}
+
+.filter-group select {
+    width: 100%;
+    padding: 0.8rem;
+    border: 1px solid #ddd;
+    border-radius: var(--radius-md);
+    background: white;
+    color: var(--dark-color);
+    font-size: 0.95rem;
+}
+
+.range-slider {
+    position: relative;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.range-track {
+    flex: 1;
+    height: 6px;
+    background: #eee;
+    border-radius: 3px;
+    position: relative;
+}
+
+.range-progress {
+    position: absolute;
+    height: 100%;
+    background: var(--gradient-primary);
+    border-radius: 3px;
+    pointer-events: none;
+}
+
+.range {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    -webkit-appearance: none;
+    background: transparent;
+}
+
+.range::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 24px;
+    height: 24px;
+    background: white;
+    border: 2px solid var(--primary-color);
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: var(--shadow-sm);
+    transition: var(--transition);
+}
+
+.range::-webkit-slider-thumb:hover {
+    transform: scale(1.2);
+}
+
+.btn-find-recipes {
+    width: 100%;
+    padding: 1.5rem;
+    border: none;
+    border-radius: var(--radius-lg);
+    background: var(--gradient-primary);
+    color: white;
+    font-size: 1.2rem;
+    font-weight: 600;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    transition: var(--transition);
+    pointer-events: auto;
+}
+
+.btn-find-recipes:disabled {
+    opacity: 1;
+    background: var(--gradient-primary);
+    cursor: pointer;
+    pointer-events: auto;
+}
+
+.btn-find-recipes:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+}
+
+.btn-animation {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+.circle {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.1);
+    animation: ripple 2s infinite;
+}
+
+.circle:nth-child(2) { animation-delay: 0.3s; }
+.circle:nth-child(3) { animation-delay: 0.6s; }
+
+@keyframes popIn {
+    from { transform: scale(0.8); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+
+@keyframes ripple {
+    0% { transform: scale(0.5); opacity: 0.5; }
+    100% { transform: scale(2); opacity: 0; }
+}
+
+@media (max-width: 768px) {
+    .ingredient-suggestion-section {
+        padding: 2rem 1rem;
+    }
+    
+    .cooking-animation {
+        width: 80px;
+        height: 80px;
+    }
+    
+    .filter-content {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+    
+    .cooking-pot {
+        width: 90%;
+        min-height: 120px;
+    }
+    
+    .cooking-pot::before {
+        width: 150px;
+        height: 25px;
+    }
+    
+    .pot-lid {
+        width: 50%;
+    }
+}
+
+.suggested-recipes {
+    margin-top: 3rem;
+    display: grid;
+    gap: 2rem;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+}
+
+.suggestion-card {
+    background: white;
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    box-shadow: var(--shadow-md);
+    transition: var(--transition);
+    display: flex;
+    flex-direction: column;
+}
+
+.suggestion-card:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-lg);
+}
+
+.suggestion-image {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+}
+
+.suggestion-content {
+    padding: 1.5rem;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.suggestion-title {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--dark-color);
+    margin: 0;
+}
+
+.suggestion-match {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--success-color);
+    font-weight: 500;
+}
+
+.missing-ingredients {
+    background: var(--light-color);
+    padding: 1rem;
+    border-radius: var(--radius-md);
+}
+
+.missing-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.missing-tag {
+    background: white;
+    padding: 0.3rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    color: var(--dark-color);
+    box-shadow: var(--shadow-sm);
+}
+
+.suggestion-info {
+    display: flex;
+    gap: 1rem;
+    color: var(--dark-color);
+    font-size: 0.9rem;
+}
+
+.suggestion-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    background: var(--gradient-primary);
+    color: white;
+    text-decoration: none;
+    transition: var(--transition);
+}
+
+.suggestion-link:hover {
+    background: var(--primary-color);
+}
+
+.no-results, .error-message {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 3rem;
+    background: white;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
+}
+
+.no-results i, .error-message i {
+    font-size: 3rem;
+    color: var(--primary-color);
+    margin-bottom: 1rem;
+}
+
+.error-message i {
+    color: var(--warning-color);
+}
+
+.notification {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #f8d7da;
+    color: #721c24;
+    padding: 12px 24px;
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    z-index: 1000;
+    display: none;
+    animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        top: -100px;
+        opacity: 0;
+    }
+    to {
+        top: 20px;
+        opacity: 1;
+    }
+}
+
+.notification.show {
+    display: block;
+}
+</style>
+
+<div id="notification" class="notification">
+    Lütfen en az bir malzeme seçin
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const ingredientInput = document.getElementById('ingredientInput');
+    const addIngredientBtn = document.getElementById('addIngredient');
+    const selectedIngredientsContainer = document.getElementById('selectedIngredients');
+    const findRecipesBtn = document.getElementById('findRecipes');
+    const suggestedRecipesContainer = document.getElementById('suggestedRecipes');
+    const ingredientSuggestions = document.getElementById('ingredientSuggestions');
+    const ingredientCategories = document.getElementById('ingredientCategories');
+    const toggleFiltersBtn = document.getElementById('toggleFilters');
+    const filterContent = document.getElementById('filterContent');
+    
+    // Butonu her zaman aktif tut
+    if (findRecipesBtn) {
+        findRecipesBtn.disabled = false;
+        findRecipesBtn.removeAttribute('disabled');
+        findRecipesBtn.classList.remove('disabled');
+    }
+    
+    let selectedIngredients = new Set();
+    let selectedCategoryId = null;
+    let typingTimer;
+    
+    // Malzeme kategorilerini yükle
+    async function loadCategories() {
+        try {
+            const response = await fetch('/ingredient_categories');
+            const categories = await response.json();
+            
+            ingredientCategories.innerHTML = categories.map(category => `
+                <div class="category-chip" data-id="${category.id}">
+                    <i class="fas ${category.icon}"></i>
+                    <span>${category.name}</span>
+                </div>
+            `).join('');
+            
+            // Kategori seçimi
+            ingredientCategories.querySelectorAll('.category-chip').forEach(chip => {
+                chip.addEventListener('click', () => {
+                    const wasActive = chip.classList.contains('active');
+                    
+                    document.querySelectorAll('.category-chip').forEach(c => {
+                        c.classList.remove('active');
+                    });
+                    
+                    if (!wasActive) {
+                        chip.classList.add('active');
+                        selectedCategoryId = chip.dataset.id;
+                    } else {
+                        selectedCategoryId = null;
+                    }
+                    
+                    if (ingredientInput.value) {
+                        searchIngredients(ingredientInput.value);
+                    }
+                });
+            });
+            
+        } catch (error) {
+            console.error('Error loading categories:', error);
+        }
+    }
+    
+    // Malzeme ara
+    async function searchIngredients(query) {
+        if (query.length < 2) {
+            ingredientSuggestions.style.display = 'none';
+            return;
+        }
+        
+        try {
+            const params = new URLSearchParams({
+                q: query,
+                ...(selectedCategoryId && { category_id: selectedCategoryId })
+            });
+            
+            const response = await fetch(`/suggested_ingredients?${params}`);
+            const ingredients = await response.json();
+            
+            if (ingredients.length > 0) {
+                ingredientSuggestions.innerHTML = ingredients.map(ingredient => `
+                    <div class="ingredient-suggestion-item" data-name="${ingredient.name}">
+                        <span>${ingredient.name}</span>
+                        ${ingredient.category ? 
+                            `<span class="category-label">
+                                <i class="fas ${ingredient.category.icon}"></i>
+                                ${ingredient.category.name}
+                            </span>` : 
+                            ''}
+                    </div>
+                `).join('');
+                
+                ingredientSuggestions.style.display = 'block';
+                
+                // Önerilen malzemeye tıklama
+                ingredientSuggestions.querySelectorAll('.ingredient-suggestion-item').forEach(item => {
+                    item.addEventListener('click', () => {
+                        addIngredient(item.dataset.name);
+                        ingredientSuggestions.style.display = 'none';
+                        ingredientInput.value = '';
+                    });
+                });
+            } else {
+                ingredientSuggestions.style.display = 'none';
+            }
+        } catch (error) {
+            console.error('Error searching ingredients:', error);
+        }
+    }
+    
+    // Input değişikliğini izle
+    ingredientInput.addEventListener('input', () => {
+        clearTimeout(typingTimer);
+        typingTimer = setTimeout(() => {
+            searchIngredients(ingredientInput.value);
+        }, 300);
+    });
+    
+    // Filtre toggle
+    toggleFiltersBtn.addEventListener('click', () => {
+        filterContent.classList.toggle('show');
+    });
+    
+    function addIngredient(ingredient) {
+        if (ingredient && !selectedIngredients.has(ingredient)) {
+            selectedIngredients.add(ingredient);
+            
+            const tag = document.createElement('div');
+            tag.className = 'ingredient-tag';
+            tag.innerHTML = `
+                <span>${ingredient}</span>
+                <button onclick="removeIngredient('${ingredient}')">
+                    <i class="fas fa-times"></i>
+                </button>
+            `;
+            
+            selectedIngredientsContainer.appendChild(tag);
+        }
+        ingredientInput.value = '';
+    }
+    
+    window.removeIngredient = function(ingredient) {
+        selectedIngredients.delete(ingredient);
+        const tags = selectedIngredientsContainer.getElementsByClassName('ingredient-tag');
+        for (let tag of tags) {
+            if (tag.querySelector('span').textContent === ingredient) {
+                tag.remove();
+                break;
+            }
+        }
+    }
+    
+    addIngredientBtn.addEventListener('click', () => {
+        addIngredient(ingredientInput.value.trim());
+    });
+    
+    ingredientInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            addIngredient(ingredientInput.value.trim());
+        }
+    });
+    
+    findRecipesBtn.addEventListener('click', async function(e) {
+        e.preventDefault();
+        console.log('Button clicked - new event listener');
+        
+        // Seçili malzemeleri kontrol et
+        if (selectedIngredients.size === 0) {
+            showNotification('Lütfen en az bir malzeme seçin');
+            return;
+        }
+        
+        const filters = {
+            category_id: document.getElementById('categoryFilter')?.value || '',
+            max_cooking_time: document.getElementById('cookingTimeFilter')?.value || '',
+            serving_size: document.getElementById('servingSizeFilter')?.value || ''
+        };
+        
+        const requestData = {
+            ingredients: Array.from(selectedIngredients),
+            filters: filters
+        };
+        
+        console.log('Sending request with data:', requestData);
+        
+        try {
+            const response = await fetch('/suggest_recipes', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                },
+                body: JSON.stringify(requestData)
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            
+            if (data.recipes && data.recipes.length > 0) {
+                // Scroll to the suggestions section
+                suggestedRecipesContainer.scrollIntoView({ behavior: 'smooth' });
+                
+                suggestedRecipesContainer.innerHTML = data.recipes.map(suggestion => `
+                    <div class="suggestion-card">
+                        <img src="/static/recipe_images/${suggestion.recipe.image_filename || 'default-recipe.jpg'}" 
+                             alt="${suggestion.recipe.title}" 
+                             class="suggestion-image">
+                        <div class="suggestion-content">
+                            <h3 class="suggestion-title">${suggestion.recipe.title}</h3>
+                            <div class="suggestion-match">
+                                <i class="fas fa-check-circle"></i> ${suggestion.matching_ingredients.length} malzeme mevcut
+                            </div>
+                            ${suggestion.required_ingredients.length > 0 ? `
+                                <div class="missing-ingredients">
+                                    <small>Eksik Malzemeler:</small>
+                                    <div class="missing-tags">
+                                        ${suggestion.required_ingredients.map(ing => 
+                                            `<span class="missing-tag">${ing}</span>`
+                                        ).join('')}
+                                    </div>
+                                </div>
+                            ` : ''}
+                            <div class="suggestion-info">
+                                <span><i class="fas fa-clock"></i> ${suggestion.recipe.cooking_time}</span>
+                                <span><i class="fas fa-user-friends"></i> ${suggestion.recipe.serving_size}</span>
+                            </div>
+                        </div>
+                        <a href="/recipe/${suggestion.recipe.id}" class="suggestion-link">
+                            <i class="fas fa-arrow-right"></i>
+                        </a>
+                    </div>
+                `).join('');
+            } else {
+                suggestedRecipesContainer.innerHTML = `
+                    <div class="no-results">
+                        <i class="fas fa-search"></i>
+                        <p>Bu malzemelerle eşleşen tarif bulunamadı.</p>
+                    </div>
+                `;
+            }
+            
+        } catch (error) {
+            console.error('Error:', error);
+            suggestedRecipesContainer.innerHTML = `
+                <div class="error-message">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <p>Bir hata oluştu. Lütfen tekrar deneyin.</p>
+                    <small>${error.message}</small>
+                </div>
+            `;
+        }
+    });
+    
+    // Kategorileri yükle
+    loadCategories();
+});
+
+function showNotification(message) {
+    const notification = document.getElementById('notification');
+    notification.textContent = message;
+    notification.classList.add('show');
+    
+    setTimeout(() => {
+        notification.classList.remove('show');
+    }, 3000);
+}
+</script>
+{% endblock %}

@@ -1,0 +1,259 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="content-section">
+        <div class="section-header mb-4">
+            <div class="d-flex align-items-center">
+                <a href="{{ url_for('profile') }}" class="btn btn-back me-3">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+                <h2 class="mb-0">Tüm Tariflerim</h2>
+            </div>
+            <div class="header-actions">
+                <a href="{{ url_for('add_recipe') }}" class="btn btn-add">
+                    <i class="fas fa-plus"></i> Yeni Tarif
+                </a>
+                <span class="recipe-count">{{ recipes|length }} tarif</span>
+            </div>
+        </div>
+
+        {% if recipes %}
+            <div class="recipe-grid">
+                {% for recipe in recipes %}
+                    <div class="recipe-card">
+                        {% if recipe.image_filename %}
+                        <div class="recipe-image">
+                            <img src="{{ url_for('static', filename='recipe_images/' + recipe.image_filename) }}" 
+                                 alt="{{ recipe.title }}">
+                        </div>
+                        {% endif %}
+                        <div class="recipe-content">
+                            <div class="recipe-header-section">
+                                <div class="recipe-header">
+                                    <span class="recipe-category">{{ recipe.category.name }}</span>
+                                    <span class="recipe-views">
+                                        <i class="fas fa-eye"></i> {{ recipe.views }}
+                                    </span>
+                                </div>
+                            </div>
+                            <h4 class="recipe-title">
+                                <a href="{{ url_for('recipe', id=recipe.id) }}" class="recipe-link">{{ recipe.title }}</a>
+                            </h4>
+                            <div class="recipe-info-section">
+                                <div class="recipe-info">
+                                    {% if recipe.preparation_time %}
+                                        <span><i class="fas fa-clock"></i> {{ recipe.preparation_time }}</span>
+                                    {% endif %}
+                                    {% if recipe.serving_size %}
+                                        <span><i class="fas fa-users"></i> {{ recipe.serving_size }}</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="recipe-actions">
+                                <a href="{{ url_for('edit_recipe', id=recipe.id) }}" class="btn btn-edit">
+                                    <i class="fas fa-edit"></i> Düzenle
+                                </a>
+                                <a href="{{ url_for('delete_recipe', id=recipe.id) }}" 
+                                   class="btn btn-delete"
+                                   onclick="return confirm('Bu tarifi silmek istediğinizden emin misiniz?')">
+                                    <i class="fas fa-trash"></i> Sil
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <i class="fas fa-book"></i>
+                <p>Henüz tarif eklememişsiniz.</p>
+                <a href="{{ url_for('add_recipe') }}" class="btn btn-add">
+                    <i class="fas fa-plus"></i> İlk Tarifinizi Ekleyin
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.btn-back {
+    color: #666;
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    padding: 0.5rem;
+    transition: all 0.3s ease;
+}
+
+.btn-back:hover {
+    color: var(--primary-pink);
+    transform: translateX(-3px);
+}
+
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.recipe-count {
+    color: #666;
+    font-size: 0.9rem;
+}
+
+.content-section {
+    background: white;
+    border-radius: 20px;
+    padding: 2rem;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.recipe-grid {
+    display: grid;
+    gap: 1.5rem;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+}
+
+.recipe-card {
+    border-radius: 15px;
+    transition: transform 0.2s;
+    overflow: hidden;
+    background: white;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    display: flex;
+    flex-direction: column;
+}
+
+.recipe-card:hover {
+    transform: translateY(-5px);
+}
+
+.recipe-image {
+    width: 100%;
+    height: 200px;
+    overflow: hidden;
+    position: relative;
+}
+
+.recipe-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.recipe-card:hover .recipe-image img {
+    transform: scale(1.05);
+}
+
+.recipe-content {
+    padding: 1.2rem;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.recipe-link {
+    text-decoration: none;
+    color: inherit;
+}
+
+.recipe-link:hover {
+    color: var(--primary-pink);
+}
+
+.recipe-title {
+    font-size: 1.1rem;
+    color: #333;
+    margin-bottom: 0.8rem;
+}
+
+.recipe-info {
+    display: flex;
+    gap: 1rem;
+    color: #666;
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+}
+
+.recipe-actions {
+    display: flex;
+    gap: 0.4rem;
+}
+
+.btn-add {
+    background: var(--primary-pink);
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 10px;
+    transition: all 0.3s ease;
+}
+
+.btn-add:hover {
+    background: var(--dark-pink);
+    color: white;
+}
+
+.btn-edit, .btn-delete {
+    background: none;
+    border: none;
+    font-size: 0.9rem;
+    padding: 0;
+    text-decoration: none;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+.btn-edit {
+    color: #FFB200;
+}
+
+.btn-delete {
+    color: #FF4949;
+}
+
+.btn-edit:hover {
+    color: #cc8f00;
+}
+
+.btn-delete:hover {
+    color: #cc3b3b;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: #666;
+}
+
+.empty-state i {
+    font-size: 3rem;
+    color: #ddd;
+    margin-bottom: 1rem;
+}
+
+.empty-state p {
+    margin-bottom: 1.5rem;
+}
+
+@media (max-width: 768px) {
+    .content-section {
+        padding: 1.5rem;
+    }
+
+    .recipe-grid {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+{% endblock %} 

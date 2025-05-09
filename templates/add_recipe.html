@@ -1,0 +1,547 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="add-recipe-container fade-in">
+    <!-- Kullanıcı Bilgisi -->
+    <div class="user-info-card mb-4">
+        <div class="user-avatar">
+            {% if current_user.profile_image %}
+                <img src="{{ current_user.profile_image }}" alt="{{ current_user.username }}" class="avatar-img">
+            {% else %}
+                <div class="avatar-placeholder">{{ current_user.username[0]|upper }}</div>
+            {% endif %}
+        </div>
+        <div class="user-details">
+            <h5 class="user-name mb-0">{{ current_user.username }}</h5>
+            <p class="text-muted mb-0 small">Tarif Ekliyor</p>
+        </div>
+    </div>
+
+    <div class="add-recipe-header text-center mb-5">
+        <h1><i class="fas fa-utensils"></i> Yeni Tarif Ekle</h1>
+        <p class="text-muted">Lezzetli tarifinizi toplulukla paylaşın</p>
+        <div class="progress mt-4">
+            <div class="progress-bar" role="progressbar" style="width: 0%"></div>
+        </div>
+        <div class="progress-text mt-2 text-muted small">Formu doldurdukça ilerleme çubuğu otomatik olarak güncellenecektir.</div>
+    </div>
+
+    <form method="POST" enctype="multipart/form-data" id="recipeForm" class="recipe-form">
+        {{ form.hidden_tag() }}
+        
+        <!-- Tarif Başlığı -->
+        <div class="card shadow-hover mb-4">
+            <div class="card-header d-flex align-items-center">
+                <div class="step-number">1</div>
+                <h5 class="mb-0"><i class="fas fa-heading"></i> Tarif Bilgileri</h5>
+                <div class="ms-auto">
+                    <span class="badge bg-light text-muted">Zorunlu</span>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="form-group">
+                    {{ form.title.label(class="form-label") }}
+                    {{ form.title(class="form-control form-control-lg", placeholder="Tarifinizin adını yazın...") }}
+                    <div class="helper-text">Örn: Çikolatalı Brownie, Ev Yapımı Pizza</div>
+                </div>
+
+                <div class="row mt-4">
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label class="recipe-label">
+                                <i class="fas fa-users"></i> Porsiyon
+                                <span class="tooltip-icon" data-bs-toggle="tooltip" title="Tarifiniz kaç kişilik?">
+                                    <i class="fas fa-question-circle"></i>
+                                </span>
+                            </label>
+                            {{ form.serving_size(class="form-control", placeholder="örn: 4-6 kişilik") }}
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label class="recipe-label">
+                                <i class="fas fa-clock"></i> Hazırlama
+                                <span class="tooltip-icon" data-bs-toggle="tooltip" title="Malzemeleri hazırlamak için gereken süre">
+                                    <i class="fas fa-question-circle"></i>
+                                </span>
+                            </label>
+                            {{ form.preparation_time(class="form-control", placeholder="örn: 20 dakika") }}
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label class="recipe-label">
+                                <i class="fas fa-fire"></i> Pişirme
+                                <span class="tooltip-icon" data-bs-toggle="tooltip" title="Pişirme için gereken süre">
+                                    <i class="fas fa-question-circle"></i>
+                                </span>
+                            </label>
+                            {{ form.cooking_time(class="form-control", placeholder="örn: 45 dakika") }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Malzemeler -->
+        <div class="card shadow-hover mb-4">
+            <div class="card-header d-flex align-items-center">
+                <div class="step-number">2</div>
+                <h5 class="mb-0"><i class="fas fa-list"></i> Malzemeler</h5>
+                <div class="ms-auto">
+                    <span class="badge bg-light text-muted">Zorunlu</span>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="helper-box mb-4">
+                    <i class="fas fa-lightbulb text-warning"></i>
+                    <p class="mb-0">İpucu: Her malzemeyi yeni bir satıra yazın.</p>
+                </div>
+                {{ form.ingredients(class="form-control", rows="10", placeholder="Her malzemeyi yeni bir satıra yazın") }}
+            </div>
+        </div>
+
+        <!-- Hazırlanış -->
+        <div class="card shadow-hover mb-4">
+            <div class="card-header d-flex align-items-center">
+                <div class="step-number">3</div>
+                <h5 class="mb-0"><i class="fas fa-tasks"></i> Hazırlanışı</h5>
+                <div class="ms-auto">
+                    <span class="badge bg-light text-muted">Zorunlu</span>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="helper-box mb-4">
+                    <i class="fas fa-lightbulb text-warning"></i>
+                    <p class="mb-0">İpucu: Her adımı ayrı bir madde olarak yazarsanız tarifiniz daha kolay anlaşılır olur.</p>
+                </div>
+                {{ form.instructions(class="form-control", rows="8", placeholder="1. Fırını 180 dereceye ısıtın...") }}
+            </div>
+        </div>
+
+        <!-- Kategori ve İpuçları -->
+        <div class="card shadow-hover mb-4">
+            <div class="card-header d-flex align-items-center">
+                <div class="step-number">4</div>
+                <h5 class="mb-0"><i class="fas fa-info-circle"></i> Ek Bilgiler</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="recipe-label">
+                                <i class="fas fa-tag"></i> Kategori
+                                <span class="badge bg-light text-muted ms-2">Zorunlu</span>
+                            </label>
+                            {{ form.category_id(class="form-select") }}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="recipe-label">
+                                <i class="fas fa-image"></i> Tarif Fotoğrafı
+                                <span class="tooltip-icon" data-bs-toggle="tooltip" title="Yatay ve net bir fotoğraf tercih edin">
+                                    <i class="fas fa-question-circle"></i>
+                                </span>
+                            </label>
+                            <div class="custom-file-wrapper">
+                                {{ form.image(class="custom-file-input") }}
+                                <label class="custom-file-label" for="image">
+                                    <i class="fas fa-cloud-upload-alt"></i>
+                                    <span>Fotoğraf seçin veya sürükleyin</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group mt-4">
+                    <label class="recipe-label">
+                        <i class="fas fa-lightbulb"></i> İpuçları ve Öneriler
+                        <span class="tooltip-icon" data-bs-toggle="tooltip" title="Tarifinizle ilgili önemli püf noktaları">
+                            <i class="fas fa-question-circle"></i>
+                        </span>
+                    </label>
+                    {{ form.tips(class="form-control", rows="4", placeholder="Örn: Keki daha yumuşak olması için...") }}
+                </div>
+            </div>
+        </div>
+
+        <!-- Gönder Butonu -->
+        <div class="text-center button-group mb-5">
+            <button type="button" class="btn btn-primary mx-2" id="saveChanges">Değişiklikleri Kaydet</button>
+            <button type="submit" class="btn btn-success mx-2" id="submitButton" disabled>Kaydet</button>
+            <a href="{{ url_for('profile') }}" class="btn btn-secondary mx-2">İptal</a>
+        </div>
+    </form>
+</div>
+
+<style>
+:root {
+    /* Ana Renkler */
+    --color-primary: #FF6B6B;
+    --color-primary-dark: #FF5252;
+    --color-primary-light: #FFA4A4;
+    --color-primary-transparent: rgba(255, 107, 107, 0.1);
+    
+    /* Nötr Renkler */
+    --color-background: #F8F9FA;
+    --color-surface: #FFFFFF;
+    --color-text: #2D3436;
+    --color-text-secondary: #636E72;
+    
+    /* Vurgu Renkleri */
+    --color-success: #6BCB77;
+    --color-warning: #FFD93D;
+    --color-error: #FF6B6B;
+    
+    /* Gölgeler */
+    --shadow-sm: 0 2px 4px rgba(0,0,0,0.04);
+    --shadow-md: 0 4px 8px rgba(0,0,0,0.06);
+}
+
+/* Genel Stiller */
+body {
+    background-color: var(--color-background);
+    color: var(--color-text);
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+
+/* Form Container */
+.add-recipe-container {
+    max-width: 800px;
+    margin: 3rem auto;
+    padding: 0 1.5rem;
+}
+
+/* Header Stili */
+.add-recipe-header {
+    padding: 1rem 0 2rem;
+}
+
+.add-recipe-header h1 {
+    color: var(--color-primary);
+    font-weight: 600;
+    font-size: 2.25rem;
+    margin-bottom: 0.5rem;
+}
+
+/* İlerleme Çubuğu */
+.progress {
+    height: 8px;
+    background-color: var(--color-primary-transparent);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.progress-bar {
+    background-color: var(--color-primary);
+    transition: width 0.3s ease;
+}
+
+/* Kart Stili */
+.card {
+    background: var(--color-surface);
+    border: none;
+    border-radius: 12px;
+    box-shadow: var(--shadow-sm);
+    transition: all 0.3s ease;
+    margin-bottom: 1.5rem;
+}
+
+.shadow-hover:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+}
+
+/* Kart Başlığı */
+.card-header {
+    background: var(--color-surface);
+    border-bottom: 2px solid var(--color-primary-transparent);
+    padding: 1.25rem;
+}
+
+.step-number {
+    width: 28px;
+    height: 28px;
+    background: var(--color-primary-transparent);
+    color: var(--color-primary);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    margin-right: 1rem;
+}
+
+/* Form Elemanları */
+.form-control {
+    border: 2px solid var(--color-primary-transparent);
+    border-radius: 8px;
+    padding: 0.875rem 1rem;
+    font-size: 1rem;
+    transition: all 0.2s ease;
+}
+
+.form-control:focus {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 4px var(--color-primary-transparent);
+}
+
+/* Yardımcı Metin */
+.helper-text {
+    color: var(--color-text-secondary);
+    font-size: 0.875rem;
+    margin-top: 0.5rem;
+}
+
+/* İpucu Kutusu */
+.helper-box {
+    background: var(--color-primary-transparent);
+    border-radius: 8px;
+    padding: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.helper-box i {
+    font-size: 1.25rem;
+}
+
+/* Tooltip İkonu */
+.tooltip-icon {
+    color: var(--color-text-secondary);
+    font-size: 0.875rem;
+    margin-left: 0.5rem;
+    cursor: help;
+}
+
+/* Özel Dosya Yükleme */
+.custom-file-wrapper {
+    position: relative;
+    overflow: hidden;
+}
+
+.custom-file-label {
+    padding: 1rem;
+    background: var(--color-surface);
+    border: 2px dashed var(--color-primary-transparent);
+    border-radius: 8px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.custom-file-label:hover {
+    border-color: var(--color-primary);
+}
+
+.custom-file-label i {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+    color: var(--color-primary);
+}
+
+/* Butonlar */
+.btn {
+    font-weight: 600;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    min-width: 150px;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark));
+    border: none;
+    box-shadow: 0 4px 12px var(--color-primary-transparent);
+}
+
+.btn-primary:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(255, 107, 107, 0.2);
+}
+
+.btn-primary:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+/* Kullanıcı Bilgisi Kartı */
+.user-info-card {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    background: var(--color-surface);
+    border-radius: 12px;
+    box-shadow: var(--shadow-sm);
+    transition: all 0.3s ease;
+}
+
+.user-info-card:hover {
+    box-shadow: var(--shadow-md);
+}
+
+.user-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    overflow: hidden;
+    background: var(--color-primary-transparent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.avatar-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.avatar-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--color-primary);
+    color: white;
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.user-details {
+    flex: 1;
+}
+
+.user-name {
+    color: var(--color-text);
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .add-recipe-container {
+        margin: 1rem auto;
+        padding: 0 1rem;
+    }
+    
+    .add-recipe-header h1 {
+        font-size: 1.75rem;
+    }
+    
+    .card-body {
+        padding: 1.25rem;
+    }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Tooltip'leri aktifleştir
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl)
+    });
+
+    // Form ilerlemesini takip et
+    function updateProgress() {
+        const form = document.getElementById('recipeForm');
+        const requiredFields = form.querySelectorAll('[required]');
+        const totalFields = requiredFields.length;
+        let filledFields = 0;
+
+        requiredFields.forEach(field => {
+            if (field.value.trim() !== '') {
+                filledFields++;
+            }
+        });
+
+        const progress = (filledFields / totalFields) * 100;
+        document.querySelector('.progress-bar').style.width = `${progress}%`;
+    }
+
+    // Tüm input değişikliklerini dinle
+    document.getElementById('recipeForm').addEventListener('input', updateProgress);
+
+    // Dosya yükleme alanı için sürükle-bırak desteği
+    const fileInput = document.querySelector('.custom-file-input');
+    const fileLabel = document.querySelector('.custom-file-label');
+    
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        fileLabel.addEventListener(eventName, preventDefaults, false);
+    });
+
+    function preventDefaults (e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+
+    ['dragenter', 'dragover'].forEach(eventName => {
+        fileLabel.addEventListener(eventName, highlight, false);
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+        fileLabel.addEventListener(eventName, unhighlight, false);
+    });
+
+    function highlight(e) {
+        fileLabel.classList.add('highlight');
+    }
+
+    function unhighlight(e) {
+        fileLabel.classList.remove('highlight');
+    }
+
+    fileLabel.addEventListener('drop', handleDrop, false);
+
+    function handleDrop(e) {
+        const dt = e.dataTransfer;
+        const files = dt.files;
+        fileInput.files = files;
+        updateFileLabel(files[0].name);
+    }
+
+    // Dosya seçildiğinde label'ı güncelle
+    fileInput.addEventListener('change', function(e) {
+        if (this.files[0]) {
+            updateFileLabel(this.files[0].name);
+        }
+    });
+
+    function updateFileLabel(fileName) {
+        const label = fileLabel.querySelector('span');
+        label.textContent = fileName;
+    }
+
+    const saveChangesBtn = document.getElementById('saveChanges');
+    const submitBtn = document.getElementById('submitButton');
+    const form = document.getElementById('recipeForm');
+    
+    // Değişiklikleri Kaydet butonuna tıklandığında
+    saveChangesBtn.addEventListener('click', function() {
+        // Form validasyonunu kontrol et
+        if (form.checkValidity()) {
+            // Kaydet butonunu aktif hale getir
+            submitBtn.disabled = false;
+            // Değişiklikleri Kaydet butonunu devre dışı bırak
+            saveChangesBtn.disabled = true;
+        } else {
+            form.reportValidity();
+        }
+    });
+    
+    // Form alanları değiştiğinde
+    form.addEventListener('input', function() {
+        // Değişiklikleri Kaydet butonunu aktif hale getir
+        saveChangesBtn.disabled = false;
+        // Kaydet butonunu devre dışı bırak
+        submitBtn.disabled = true;
+    });
+});
+</script>
+{% endblock %}

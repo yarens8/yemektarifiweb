@@ -1,0 +1,319 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="text-center mb-0">Tarif Düzenle</h2>
+                </div>
+                <div class="card-body">
+                    <form method="POST" enctype="multipart/form-data" id="recipeForm">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="mb-3">
+                            {{ form.title.label(class="form-label") }}
+                            {{ form.title(class="form-control") }}
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form.category_id.label(class="form-label") }}
+                            {{ form.category_id(class="form-select") }}
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                {{ form.preparation_time.label(class="form-label") }}
+                                {{ form.preparation_time(class="form-control", placeholder="örn: 20 dakika") }}
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                {{ form.cooking_time.label(class="form-label") }}
+                                {{ form.cooking_time(class="form-control", placeholder="örn: 30 dakika") }}
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                {{ form.serving_size.label(class="form-label") }}
+                                {{ form.serving_size(class="form-control", placeholder="örn: 4-6 Kişilik") }}
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form.ingredients.label(class="form-label") }}
+                            {{ form.ingredients(class="form-control", rows="10", placeholder="Her malzemeyi yeni bir satıra yazın") }}
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form.instructions.label(class="form-label") }}
+                            {{ form.instructions(class="form-control", rows="5") }}
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form.tips.label(class="form-label") }}
+                            {{ form.tips(class="form-control", rows="3", placeholder="Varsa tarifinizle ilgili püf noktalarını yazın") }}
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form.image.label(class="form-label") }}
+                            {{ form.image(class="form-control") }}
+                            {% if recipe.image_filename %}
+                            <div class="mt-2">
+                                <img src="{{ url_for('static', filename='recipe_images/' + recipe.image_filename) }}" 
+                                     alt="Mevcut Resim" class="img-thumbnail" style="max-height: 200px;">
+                                <p class="form-text">Yeni bir resim yüklerseniz mevcut resim değiştirilecektir.</p>
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="text-center button-group">
+                            <button type="button" class="btn btn-primary mx-2" id="saveChanges">Değişiklikleri Kaydet</button>
+                            <button type="submit" class="btn btn-success mx-2" id="submitButton" disabled>Kaydet</button>
+                            <a href="{{ url_for('profile') }}" class="btn btn-secondary mx-2">İptal</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Centered Modal Toast Notification -->
+<div id="centerToastOverlay" class="center-toast-overlay" style="display:none;">
+  <div id="centerToast" class="center-toast">
+    <div class="center-toast-icon" id="centerToastIcon"><i class="fas fa-info-circle"></i></div>
+    <div class="center-toast-title" id="centerToastTitle">Bilgi</div>
+    <div class="center-toast-msg" id="centerToastMsg"></div>
+    <button id="centerToastClose" class="center-toast-close">Tamam</button>
+  </div>
+</div>
+
+<style>
+.form-control, .form-select {
+    border-radius: 8px;
+    border: 1px solid #ddd;
+    padding: 0.5rem 1rem;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #FF6B6B;
+    box-shadow: 0 0 0 0.2rem rgba(255, 107, 107, 0.25);
+}
+
+.button-group {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+}
+
+.btn {
+    min-width: 150px;
+}
+
+.btn-primary {
+    background-color: #FF6B6B;
+    border-color: #FF6B6B;
+}
+
+.btn-primary:hover {
+    background-color: #FF5252;
+    border-color: #FF5252;
+}
+
+.btn-success {
+    background-color: #28a745;
+    border-color: #28a745;
+}
+
+.btn-success:hover:not(:disabled) {
+    background-color: #218838;
+    border-color: #1e7e34;
+}
+
+.btn-success:disabled {
+    background-color: #6c757d;
+    border-color: #6c757d;
+    cursor: not-allowed;
+}
+
+.card {
+    border-radius: 15px;
+    box-shadow: 0 0 20px rgba(0,0,0,0.1);
+    border: none;
+}
+
+.card-header {
+    background-color: #fff;
+    border-bottom: 1px solid #eee;
+    padding: 1.5rem;
+    border-radius: 15px 15px 0 0 !important;
+}
+
+.card-body {
+    padding: 2rem;
+}
+
+.form-text {
+    color: #666;
+}
+
+.img-thumbnail {
+    border-radius: 8px;
+}
+
+.center-toast-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(44,62,80,0.35);
+  z-index: 4000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.3s;
+  backdrop-filter: blur(2px);
+}
+.center-toast {
+  background: rgba(255,255,255,0.98);
+  border-radius: 22px;
+  box-shadow: 0 8px 40px rgba(44,62,80,0.18);
+  padding: 2.5rem 2.2rem 2rem 2.2rem;
+  min-width: 320px;
+  max-width: 90vw;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  animation: toastPopIn 0.35s cubic-bezier(.4,1.4,.6,1) both;
+  position: relative;
+}
+@keyframes toastPopIn {
+  0% { transform: scale(0.7); opacity: 0; }
+  80% { transform: scale(1.08); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+@keyframes toastPopOut {
+  0% { transform: scale(1); opacity: 1; }
+  100% { transform: scale(0.7); opacity: 0; }
+}
+.center-toast-icon {
+  font-size: 3.2rem;
+  margin-bottom: 1.1rem;
+  color: #FF6B6B;
+  filter: drop-shadow(0 2px 8px rgba(255,107,107,0.13));
+}
+.center-toast-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 0.7rem;
+  color: #2d3436;
+}
+.center-toast-msg {
+  font-size: 1.08rem;
+  color: #444;
+  margin-bottom: 1.5rem;
+}
+.center-toast-close {
+  background: linear-gradient(90deg,#FF6B6B,#FF8E8E);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 1.08rem;
+  font-weight: 500;
+  padding: 0.7rem 2.2rem;
+  box-shadow: 0 2px 8px rgba(255,107,107,0.08);
+  cursor: pointer;
+  transition: background 0.2s, box-shadow 0.2s;
+}
+.center-toast-close:hover {
+  background: linear-gradient(90deg,#FF8E8E,#FF6B6B);
+  box-shadow: 0 4px 16px rgba(255,107,107,0.13);
+}
+@media (max-width: 600px) {
+  .center-toast {
+    min-width: 0;
+    padding: 1.2rem 0.7rem 1.2rem 0.7rem;
+  }
+  .center-toast-title { font-size: 1.08rem; }
+  .center-toast-msg { font-size: 0.98rem; }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const saveChangesBtn = document.getElementById('saveChanges');
+    const submitBtn = document.getElementById('submitButton');
+    const form = document.getElementById('recipeForm');
+
+    // Centered Toast
+    const centerToastOverlay = document.getElementById('centerToastOverlay');
+    const centerToast = document.getElementById('centerToast');
+    const centerToastIcon = document.getElementById('centerToastIcon');
+    const centerToastTitle = document.getElementById('centerToastTitle');
+    const centerToastMsg = document.getElementById('centerToastMsg');
+    const centerToastClose = document.getElementById('centerToastClose');
+    let centerToastTimeout = null;
+
+    function showCenterToast(message, type = 'info', duration = 2500) {
+        // İkon ve başlık türüne göre
+        if (type === 'success') {
+            centerToastIcon.innerHTML = '<i class="fas fa-check-circle"></i>';
+            centerToastIcon.style.color = '#2ECC71';
+            centerToastTitle.textContent = 'Başarılı';
+        } else if (type === 'error') {
+            centerToastIcon.innerHTML = '<i class="fas fa-times-circle"></i>';
+            centerToastIcon.style.color = '#E74C3C';
+            centerToastTitle.textContent = 'Hata';
+        } else if (type === 'warning') {
+            centerToastIcon.innerHTML = '<i class="fas fa-exclamation-circle"></i>';
+            centerToastIcon.style.color = '#F1C40F';
+            centerToastTitle.textContent = 'Uyarı';
+        } else {
+            centerToastIcon.innerHTML = '<i class="fas fa-info-circle"></i>';
+            centerToastIcon.style.color = '#FF6B6B';
+            centerToastTitle.textContent = 'Bilgi';
+        }
+        centerToastMsg.textContent = message;
+        centerToastOverlay.style.display = 'flex';
+        centerToast.style.animation = 'toastPopIn 0.35s';
+        if (centerToastTimeout) clearTimeout(centerToastTimeout);
+        centerToastTimeout = setTimeout(() => {
+            closeCenterToast();
+        }, duration);
+    }
+    function closeCenterToast() {
+        centerToast.style.animation = 'toastPopOut 0.25s';
+        setTimeout(() => {
+            centerToastOverlay.style.display = 'none';
+        }, 220);
+        if (centerToastTimeout) clearTimeout(centerToastTimeout);
+    }
+    centerToastClose.addEventListener('click', closeCenterToast);
+    centerToastOverlay.addEventListener('click', function(e) {
+        if (e.target === centerToastOverlay) closeCenterToast();
+    });
+
+    // Değişiklikleri Kaydet butonuna tıklandığında
+    saveChangesBtn.addEventListener('click', function() {
+        // Form validasyonunu kontrol et
+        if (form.checkValidity()) {
+            // Kaydet butonunu aktif hale getir
+            submitBtn.disabled = false;
+            // Değişiklikleri Kaydet butonunu devre dışı bırak
+            saveChangesBtn.disabled = true;
+            // Kullanıcıya bilgi ver
+            showCenterToast('Değişiklikler kaydedildi. Onaylamak için "Kaydet" butonuna basın.', 'success', 2500);
+        } else {
+            // Form geçerli değilse kullanıcıya bilgi ver
+            showCenterToast('Lütfen tüm gerekli alanları doldurun.', 'warning', 2500);
+            form.reportValidity();
+        }
+    });
+    // Form alanları değiştiğinde
+    form.addEventListener('input', function() {
+        // Değişiklikleri Kaydet butonunu aktif hale getir
+        saveChangesBtn.disabled = false;
+        // Kaydet butonunu devre dışı bırak
+        submitBtn.disabled = true;
+    });
+});
+</script>
+{% endblock %} 

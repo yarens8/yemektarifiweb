@@ -1,0 +1,703 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="recipe-detail-container fade-in">
+    <div class="recipe-hero">
+        {% if recipe.image_filename %}
+        <div class="recipe-cover-image">
+            <img src="{{ url_for('static', filename='recipe_images/' + recipe.image_filename) }}" 
+                 alt="{{ recipe.title }}">
+            <div class="recipe-overlay">
+                <div class="recipe-header-content">
+                    <div class="recipe-badges">
+                        <span class="recipe-category-badge">
+                            <i class="fas fa-tag"></i> {{ recipe.category.name }}
+                        </span>
+                        <span class="recipe-views-badge">
+                            <i class="fas fa-eye"></i> {{ recipe.views }} görüntülenme
+                        </span>
+                    </div>
+                    <h1>{{ recipe.title }}</h1>
+                    <div class="recipe-meta">
+                        <span class="author">
+                            <i class="fas fa-user-circle"></i> {{ recipe.author.username }}
+                        </span>
+                        <span class="date">
+                            <i class="fas fa-calendar-alt"></i> {{ recipe.created_at.strftime('%d.%m.%Y') }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="recipe-info-cards">
+        <div class="info-card">
+            <div class="info-icon">
+                <i class="fas fa-users"></i>
+            </div>
+            <div class="info-text">
+                <span class="info-label">Kaç Kişilik</span>
+                <span class="info-value">{{ recipe.serving_size }}</span>
+            </div>
+        </div>
+        <div class="info-card">
+            <div class="info-icon">
+                <i class="fas fa-clock"></i>
+            </div>
+            <div class="info-text">
+                <span class="info-label">Hazırlama Süresi</span>
+                <span class="info-value">{{ recipe.preparation_time }}</span>
+            </div>
+        </div>
+        <div class="info-card">
+            <div class="info-icon">
+                <i class="fas fa-fire"></i>
+            </div>
+            <div class="info-text">
+                <span class="info-label">Pişirme Süresi</span>
+                <span class="info-value">{{ recipe.cooking_time }}</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="recipe-content">
+        <div class="recipe-main-content">
+            <!-- Malzemeler Bölümü -->
+            <div class="ingredients-section mt-4">
+                <h2 class="section-title mb-4">
+                    <i class="fas fa-shopping-basket"></i>
+                    Malzemeler
+                </h2>
+                
+                <div class="ingredients-container">
+                    {% if recipe.ingredients_sections %}
+                        {% set sections = recipe.ingredients_sections|from_json %}
+                        {% for section_name, ingredients in sections.items() %}
+                            <div class="ingredient-card">
+                                <div class="ingredient-card-header">
+                                    <h3 class="ingredient-card-title">
+                                        <i class="fas fa-utensils"></i>
+                                        {{ section_name }}
+                                    </h3>
+                                </div>
+                                <div class="ingredient-card-body">
+                                    <ul class="ingredient-card-list">
+                                        {% for ingredient in ingredients %}
+                                            <li class="ingredient-card-item">
+                                                <i class="fas fa-check"></i>
+                                                <span>{{ ingredient }}</span>
+                                            </li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="ingredient-card">
+                            <div class="ingredient-card-header">
+                                <h3 class="ingredient-card-title">
+                                    <i class="fas fa-utensils"></i>
+                                    Malzemeler
+                                </h3>
+                            </div>
+                            <div class="ingredient-card-body">
+                                <ul class="ingredient-card-list">
+                                    {% for ingredient in recipe.ingredients.split('\n') %}
+                                        {% if ingredient.strip() %}
+                                            <li class="ingredient-card-item">
+                                                <i class="fas fa-check"></i>
+                                                <span>{{ ingredient.strip() }}</span>
+                                            </li>
+                                        {% endif %}
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Hazırlanış Bölümü -->
+            <div class="recipe-section instructions">
+                <h2 class="section-title">
+                    <i class="fas fa-list-ol"></i>
+                    Hazırlanışı
+                </h2>
+                <div class="instructions-container">
+                    {% for instruction in recipe.instructions.split('\n') %}
+                        {% if instruction.strip() %}
+                        <div class="instruction-step">
+                            <div class="step-number">{{ loop.index }}</div>
+                            <div class="step-content">
+                                <div class="step-icon">
+                                    <i class="fas fa-utensils"></i>
+                                </div>
+                                <p>{{ instruction.strip() }}</p>
+                            </div>
+                        </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        {% if recipe.tips %}
+        <div class="recipe-section tips">
+            <div class="section-header">
+                <h2><i class="fas fa-lightbulb"></i> Püf Noktaları</h2>
+            </div>
+            <div class="tips-list">
+                {% for tip in recipe.tips.split('\n') %}
+                    {% if tip.strip() %}
+                    <div class="tip-item">
+                        <i class="fas fa-star"></i>
+                        <p>{{ tip.strip() }}</p>
+                    </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="recipe-actions">
+        <a href="{{ referrer_url if referrer_url else url_for('index') }}" class="btn-back">
+            <i class="fas fa-arrow-left"></i>
+            <span>Geri Dön</span>
+        </a>
+    </div>
+</div>
+
+<style>
+:root {
+    --primary-color: #FF6B6B;
+    --secondary-color: #FFB6B6;
+    --text-color: #2D3436;
+    --text-light: #636E72;
+    --background-light: #F9FAFB;
+    --shadow-color: rgba(0, 0, 0, 0.1);
+    --gradient-primary: linear-gradient(135deg, #FF8C8C 0%, #FF6B6B 100%);
+    --gradient-overlay: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.7) 100%);
+}
+
+.recipe-detail-container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 0;
+}
+
+.recipe-hero {
+    position: relative;
+    margin-bottom: 2rem;
+}
+
+.recipe-cover-image {
+    position: relative;
+    height: 60vh;
+    min-height: 400px;
+    width: 100%;
+    border-radius: 0;
+    overflow: hidden;
+}
+
+.recipe-cover-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.recipe-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 3rem 2rem;
+    background: var(--gradient-overlay);
+    color: white;
+}
+
+.recipe-header-content {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.recipe-badges {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.recipe-category-badge, .recipe-views-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 50px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    backdrop-filter: blur(10px);
+}
+
+.recipe-category-badge {
+    background: rgba(255, 107, 107, 0.3);
+    color: white;
+}
+
+.recipe-views-badge {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+}
+
+.recipe-overlay h1 {
+    font-size: 3rem;
+    line-height: 1.2;
+    margin-bottom: 1rem;
+    font-weight: 700;
+}
+
+.recipe-meta {
+    display: flex;
+    gap: 1.5rem;
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 0.95rem;
+}
+
+.recipe-info-cards {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    padding: 0 1rem;
+    margin: -3rem auto 3rem;
+    position: relative;
+    z-index: 2;
+    max-width: 800px;
+}
+
+.info-card {
+    background: white;
+    padding: 1.2rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px var(--shadow-color);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex: 1;
+    min-width: 0;
+    transition: transform 0.2s ease;
+}
+
+.info-card:hover {
+    transform: translateY(-3px);
+}
+
+.info-icon {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 107, 107, 0.15);
+    border-radius: 12px;
+    color: var(--primary-color);
+    font-size: 1.4rem;
+    flex-shrink: 0;
+}
+
+.info-text {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.info-label {
+    color: var(--text-light);
+    font-size: 0.85rem;
+    margin-bottom: 0.2rem;
+}
+
+.info-value {
+    color: var(--text-color);
+    font-weight: 600;
+    font-size: 1.1rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.recipe-content {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 0 1rem;
+    display: grid;
+    gap: 2rem;
+}
+
+.recipe-main-content {
+    display: grid;
+    grid-template-columns: 350px 1fr;
+    gap: 3rem;
+    margin-bottom: 2rem;
+    position: relative;
+    background: white;
+    border-radius: 30px;
+    padding: 2rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+}
+
+.ingredients-section {
+    position: sticky;
+    top: 2rem;
+    height: fit-content;
+    padding: 0;
+    border-right: 1px solid rgba(0, 0, 0, 0.1);
+    padding-right: 2rem;
+}
+
+.section-title {
+    font-size: 1.4rem;
+    color: var(--text-color);
+    margin-bottom: 2rem;
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+}
+
+.section-title i {
+    color: var(--primary-color);
+    font-size: 1.2rem;
+}
+
+.ingredients-container {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.ingredient-card {
+    background: none;
+    border: none;
+    box-shadow: none;
+}
+
+.ingredient-card-header {
+    background: none;
+    padding: 0 0 0.5rem 0;
+    margin-bottom: 1rem;
+    border-bottom: 2px solid var(--primary-color);
+}
+
+.ingredient-card-title {
+    color: var(--text-color);
+    font-size: 1.1rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+}
+
+.ingredient-card-title i {
+    color: var(--primary-color);
+}
+
+.ingredient-card-body {
+    padding: 0;
+}
+
+.ingredient-card-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+}
+
+.ingredient-card-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.6rem 1rem;
+    border-radius: 8px;
+    background: none;
+    border: none;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.ingredient-card-item::before {
+    content: '';
+    position: absolute;
+    left: -0.5rem;
+    right: -0.5rem;
+    top: 0;
+    bottom: 0;
+    background: var(--primary-color);
+    border-radius: 8px;
+    opacity: 0;
+    transition: all 0.2s ease;
+    z-index: 0;
+}
+
+.ingredient-card-item:hover::before {
+    opacity: 0.05;
+}
+
+.ingredient-card-item i {
+    color: var(--primary-color);
+    font-size: 0.8rem;
+    position: relative;
+    z-index: 1;
+}
+
+.ingredient-card-item span {
+    color: var(--text-color);
+    font-size: 0.95rem;
+    position: relative;
+    z-index: 1;
+}
+
+.instructions {
+    padding: 0;
+    background: none;
+    box-shadow: none;
+}
+
+.instructions-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    padding: 1rem;
+}
+
+.instruction-step {
+    display: flex;
+    align-items: flex-start;
+    gap: 1.5rem;
+    padding: 1.5rem;
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    position: relative;
+}
+
+.instruction-step:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    border-color: var(--primary-color);
+}
+
+.step-number {
+    width: 45px;
+    height: 45px;
+    min-width: 45px;
+    background: var(--primary-color);
+    color: white;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    font-weight: 600;
+}
+
+.step-content {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    flex: 1;
+}
+
+.step-icon {
+    width: 35px;
+    height: 35px;
+    min-width: 35px;
+    background: rgba(255, 107, 107, 0.1);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--primary-color);
+    font-size: 1rem;
+    transition: all 0.3s ease;
+}
+
+.instruction-step:hover .step-icon {
+    transform: scale(1.1);
+}
+
+.step-content p {
+    margin: 0;
+    font-size: 1rem;
+    line-height: 1.5;
+    color: var(--text-color);
+    padding-top: 0.5rem;
+}
+
+.prep-step {
+    background: rgba(255, 107, 107, 0.05);
+    border-color: var(--primary-color);
+}
+
+.prep-step .step-number {
+    background: white;
+    color: var(--primary-color);
+}
+
+.tips-list {
+    display: grid;
+    gap: 1rem;
+}
+
+.tip-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 1.2rem;
+    background: var(--background-light);
+    border-radius: 12px;
+    transition: all 0.3s ease;
+}
+
+.tip-item:hover {
+    transform: translateX(5px);
+    background: #f0f2f5;
+}
+
+.tip-item i {
+    color: #FFD700;
+    font-size: 1.1rem;
+    margin-top: 0.2rem;
+}
+
+.recipe-actions {
+    display: flex;
+    justify-content: center;
+    margin: 3rem auto;
+    padding: 0 1rem;
+    max-width: 800px;
+}
+
+.btn-back {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    padding: 0.8rem 1.5rem;
+    background: var(--gradient-primary);
+    color: white;
+    border-radius: 50px;
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px var(--shadow-color);
+}
+
+.btn-back:hover {
+    transform: translateX(-5px);
+    box-shadow: 0 6px 20px var(--shadow-color);
+    color: white;
+}
+
+.info-card:first-child {
+    min-width: 250px;
+}
+
+.info-card:first-child .info-value {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: unset;
+}
+
+@media (max-width: 1024px) {
+    .recipe-main-content {
+        grid-template-columns: 1fr;
+        gap: 3rem;
+    }
+
+    .ingredients-section {
+        position: relative;
+        top: 0;
+        border-right: none;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+        padding-right: 0;
+        padding-bottom: 2rem;
+        margin-bottom: 2rem;
+    }
+
+    .ingredients-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 2rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .recipe-cover-image {
+        height: 50vh;
+        min-height: 300px;
+    }
+
+    .recipe-overlay h1 {
+        font-size: 2rem;
+    }
+
+    .recipe-info-cards {
+        flex-direction: column;
+        margin-top: -2rem;
+    }
+
+    .info-card {
+        width: 100%;
+    }
+
+    .recipe-section {
+        padding: 1.5rem;
+    }
+
+    .ingredients-section,
+    .instruction-step {
+        backdrop-filter: none;
+        background: white;
+    }
+
+    .ingredients-container {
+        grid-template-columns: 1fr;
+    }
+    
+    .ingredient-card {
+        margin: 0;
+    }
+    
+    .section-title {
+        font-size: 1.5rem;
+    }
+
+    .instructions-container {
+        padding: 0.5rem;
+    }
+
+    .instruction-step {
+        padding: 1rem;
+        gap: 1rem;
+    }
+
+    .step-number {
+        width: 35px;
+        height: 35px;
+        min-width: 35px;
+        font-size: 1rem;
+    }
+
+    .step-icon {
+        width: 30px;
+        height: 30px;
+        min-width: 30px;
+        font-size: 0.9rem;
+    }
+
+    .step-content p {
+        font-size: 0.95rem;
+    }
+}
+</style>
+{% endblock %}

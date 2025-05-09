@@ -1,0 +1,342 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Arama Başlığı ve Formu -->
+    <div class="modern-search-header text-center mb-5">
+        <h2 class="modern-search-title">Lezzetli Tarifleri Keşfet</h2>
+        <form action="{{ url_for('search') }}" method="get" class="modern-search-form">
+            <div class="modern-search-box">
+                <span class="modern-search-icon"><i class="fas fa-search"></i></span>
+                <input type="text" 
+                       name="q" 
+                       class="modern-search-input" 
+                       placeholder="Tarif, malzeme veya kategori ara..." 
+                       value="{{ query }}"
+                       autocomplete="off">
+                <button type="submit" class="modern-search-btn"><i class="fas fa-search"></i></button>
+            </div>
+        </form>
+        <div class="modern-popular-searches mt-3">
+            <span class="modern-popular-label">Popüler Aramalar:</span>
+            <a href="?q=kurabiye" class="modern-popular-tag">Kurabiye</a>
+            <a href="?q=börek" class="modern-popular-tag">Börek</a>
+            <a href="?q=kek" class="modern-popular-tag">Kek</a>
+            <a href="?q=çorba" class="modern-popular-tag">Çorba</a>
+        </div>
+    </div>
+
+    {% if query %}
+        <!-- Arama Sonuçları -->
+        <div class="search-results">
+            <h3 class="mb-4">
+                <i class="fas fa-search"></i> 
+                "{{ query }}" için Arama Sonuçları 
+                {% if recipes %}
+                    <span class="badge result-badge">{{ recipes|length }} sonuç</span>
+                {% endif %}
+            </h3>
+
+            {% if recipes %}
+                <div class="modern-recipe-grid">
+                    {% for recipe in recipes %}
+                    <div class="modern-recipe-card">
+                        {% if recipe.image_filename %}
+                        <div class="modern-recipe-image">
+                            <img src="{{ url_for('static', filename='recipe_images/' + recipe.image_filename) }}" 
+                                 alt="{{ recipe.title }}">
+                        </div>
+                        {% endif %}
+                        <div class="modern-recipe-content">
+                            <div class="modern-recipe-meta">
+                                <span class="modern-recipe-category">{{ recipe.category.name }}</span>
+                                <span class="modern-recipe-views"><i class="fas fa-eye"></i> {{ recipe.views }}</span>
+                            </div>
+                            <h3 class="modern-recipe-title">
+                                <a href="{{ url_for('recipe', id=recipe.id) }}" class="modern-recipe-link">{{ recipe.title }}</a>
+                            </h3>
+                            <div class="modern-recipe-info">
+                                {% if recipe.preparation_time %}
+                                    <span><i class="fas fa-clock"></i> {{ recipe.preparation_time }}</span>
+                                {% endif %}
+                                {% if recipe.serving_size %}
+                                    <span><i class="fas fa-users"></i> {{ recipe.serving_size }}</span>
+                                {% endif %}
+                            </div>
+                            <div class="modern-recipe-ingredients">
+                                {{ recipe.ingredients[:150] }}{% if recipe.ingredients|length > 150 %}...{% endif %}
+                            </div>
+                            <div class="modern-recipe-actions">
+                                <a href="{{ url_for('recipe', id=recipe.id) }}" class="btn btn-primary btn-modern-view">
+                                    <i class="fas fa-book-open"></i> Görüntüle
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="alert alert-custom">
+                    <i class="fas fa-info-circle"></i>
+                    Aramanızla eşleşen tarif bulunamadı. Lütfen farklı anahtar kelimeler deneyiniz.
+                </div>
+            {% endif %}
+        </div>
+    {% endif %}
+</div>
+
+<style>
+body {
+    background: #f4f5f7;
+}
+.modern-recipe-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2.5rem;
+    justify-content: center;
+    margin: 2rem 0;
+}
+.modern-recipe-card {
+    background: #fff;
+    border-radius: 20px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.10);
+    max-width: 350px;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transition: box-shadow 0.3s, transform 0.3s;
+    margin-bottom: 0;
+}
+.modern-recipe-card:hover {
+    box-shadow: 0 8px 32px rgba(255,107,107,0.18);
+    transform: translateY(-4px) scale(1.02);
+}
+.modern-recipe-image {
+    width: 100%;
+    height: 200px;
+    overflow: hidden;
+    background: #f8f8fa;
+}
+.modern-recipe-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+.modern-recipe-content {
+    padding: 1.2rem 1.2rem 1rem 1.2rem;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+.modern-recipe-meta {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    font-size: 0.95rem;
+    margin-bottom: 0.7rem;
+    color: #888;
+}
+.modern-recipe-category {
+    background: #f3eaff;
+    color: #7c4dff;
+    padding: 0.2rem 0.9rem;
+    border-radius: 12px;
+    font-size: 0.92rem;
+    font-weight: 500;
+}
+.modern-recipe-views {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    color: #b0b0b0;
+}
+.modern-recipe-title {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #2d3436;
+    margin-bottom: 0.7rem;
+    margin-top: 0.2rem;
+    line-height: 1.2;
+}
+.modern-recipe-link {
+    color: inherit;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+.modern-recipe-link:hover {
+    color: #FF6B6B;
+}
+.modern-recipe-info {
+    display: flex;
+    gap: 1.2rem;
+    color: #888;
+    font-size: 0.98rem;
+    margin-bottom: 0.7rem;
+}
+.modern-recipe-info i {
+    color: #FF6B6B;
+    margin-right: 0.3rem;
+}
+.modern-recipe-ingredients {
+    color: #444;
+    font-size: 1.01rem;
+    margin-bottom: 1.1rem;
+    min-height: 2.2em;
+    line-height: 1.5;
+}
+.modern-recipe-actions {
+    margin-top: auto;
+    display: flex;
+    justify-content: flex-end;
+}
+.btn-modern-view {
+    background: #FF6B6B;
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    padding: 0.5rem 1.2rem;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+    box-shadow: 0 2px 8px rgba(255,107,107,0.07);
+    width: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+.btn-modern-view:hover {
+    background: #ff5252;
+    color: #fff;
+}
+@media (max-width: 600px) {
+    .modern-recipe-grid {
+        flex-direction: column;
+        gap: 1.5rem;
+        align-items: center;
+    }
+    .modern-recipe-card {
+        max-width: 98vw;
+    }
+    .modern-recipe-image {
+        height: 150px;
+    }
+}
+.modern-search-header {
+    max-width: 800px;
+    margin: 0 auto 2.5rem auto;
+    padding: 1.2rem 2rem 1.2rem 2rem;
+    background: #fff;
+    border-radius: 18px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.07);
+}
+.modern-search-title {
+    font-size: 2.1rem;
+    font-weight: 700;
+    color: #2d3436;
+    margin-bottom: 1.1rem;
+}
+.modern-search-form {
+    width: 100%;
+}
+.modern-search-box {
+    display: flex;
+    align-items: center;
+    background: #f8f8fa;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(255,107,107,0.07);
+    padding: 0.3rem 1rem;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+    border: 2px solid #f3eaff;
+    transition: border 0.2s;
+    min-width: 400px;
+    max-width: 700px;
+    margin-left: auto;
+    margin-right: auto;
+    height: 48px;
+}
+.modern-search-box:focus-within {
+    border: 2px solid #FF6B6B;
+}
+.modern-search-icon {
+    color: #b0b0b0;
+    font-size: 1.2rem;
+    margin-right: 0.5rem;
+}
+.modern-search-input {
+    border: none;
+    background: transparent;
+    font-size: 1.1rem;
+    flex: 1;
+    outline: none;
+    padding: 0.5rem 0;
+    color: #2d3436;
+}
+.modern-search-btn {
+    background: #FF6B6B;
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    padding: 0.4rem 1.1rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+    margin-left: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 36px;
+}
+.modern-search-btn:hover {
+    background: #ff5252;
+}
+.modern-popular-searches {
+    margin-top: 0.5rem;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    justify-content: flex-start;
+}
+.modern-popular-label {
+    color: #888;
+    font-size: 0.98rem;
+    margin-right: 0.3rem;
+}
+.modern-popular-tag {
+    background: #f3eaff;
+    color: #7c4dff;
+    padding: 0.2rem 1.1rem;
+    border-radius: 10px;
+    font-size: 0.98rem;
+    font-weight: 500;
+    text-decoration: none;
+    transition: background 0.2s, color 0.2s;
+    border: none;
+    display: inline-block;
+}
+.modern-popular-tag:hover {
+    background: #7c4dff;
+    color: #fff;
+}
+@media (max-width: 700px) {
+    .modern-search-header {
+        max-width: 98vw;
+        padding: 0.7rem 0.3rem 0.7rem 0.3rem;
+        border-radius: 12px;
+    }
+    .modern-search-title {
+        font-size: 1.3rem;
+    }
+    .modern-search-box {
+        min-width: 0;
+        max-width: 98vw;
+        height: 40px;
+    }
+}
+</style>
+{% endblock %} 
