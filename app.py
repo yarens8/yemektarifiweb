@@ -15,6 +15,8 @@ from wtforms import StringField, TextAreaField, FileField, SubmitField, SelectFi
 from wtforms.validators import DataRequired, Length
 from flask_wtf.csrf import generate_csrf
 from flask_cors import CORS
+from sqlalchemy import func
+import requests
 
 # Flask uygulamasını oluştur
 app = Flask(__name__)
@@ -420,11 +422,22 @@ def recipe(id):
     except json.JSONDecodeError:
         ingredients_sections = [{"title": "Malzemeler", "ingredients": recipe.ingredients.split('\n')}]
     
+    # Puan ortalaması ve toplam puan sayısı
+    avg_rating = db.session.query(func.avg(RecipeRating.rating)).filter_by(recipe_id=recipe.id).scalar() or 0
+    rating_count = db.session.query(func.count(RecipeRating.id)).filter_by(recipe_id=recipe.id).scalar() or 0
+    user_rating = None
+    if current_user.is_authenticated:
+        user_rating_obj = db.session.query(RecipeRating).filter_by(recipe_id=recipe.id, user_id=current_user.id).first()
+        user_rating = user_rating_obj.rating if user_rating_obj else 0
+    
     return render_template('recipe.html', 
                          recipe=recipe, 
                          recipe_user=recipe_user, 
                          ingredients_sections=ingredients_sections,
-                         referrer_url=referrer_url)
+                         referrer_url=referrer_url,
+                         avg_rating=round(avg_rating, 1),
+                         rating_count=rating_count,
+                         user_rating=user_rating)
 
 # Tarif arama
 @app.route('/search')
@@ -464,15 +477,13 @@ def add_comment(recipe_id):
     return redirect(url_for('recipe', id=recipe_id))
 
 # Yorum silme
-@app.route('/comment/<int:comment_id>/delete')
+@app.route('/comment/<int:comment_id>/delete', methods=['POST'])
 @login_required
 def delete_comment(comment_id):
     comment = Comment.query.get_or_404(comment_id)
-    
     if comment.user_id != current_user.id and current_user.id != 2:
         flash('Bu yorumu silme yetkiniz yok.', 'error')
         return redirect(url_for('recipe', id=comment.recipe_id))
-    
     db.session.delete(comment)
     db.session.commit()
     flash('Yorum silindi!', 'success')
@@ -965,6 +976,72 @@ def get_user_profile():
 def favorites_view():
     favorite_recipes = current_user.favorites
     return render_template('favorites.html', favorite_recipes=favorite_recipes)
+
+# Yeni eklenen RecipeRating modeli
+class RecipeRating(db.Model):
+    __tablename__ = 'RecipeRating'
+    __table_args__ = {'schema': 'dbo', 'implicit_returning': False}
+    id = db.Column(db.Integer, primary_key=True)
+    recipe_id = db.Column(db.Integer, db.ForeignKey('dbo.Recipe.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('dbo.User.id'), nullable=False)
+    rating = db.Column(db.Integer, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    user = db.relationship('User', backref='recipe_ratings')
+    recipe = db.relationship('Recipe', backref='recipe_ratings')
+
+@app.route('/recipe/<int:recipe_id>/rate', methods=['POST'])
+@login_required
+def rate_recipe(recipe_id):
+    score = int(request.form.get('score', 0))
+    if score < 1 or score > 5:
+        flash('Geçersiz puan!', 'error')
+        return redirect(url_for('recipe', id=recipe_id))
+
+    rating = RecipeRating.query.filter_by(recipe_id=recipe_id, user_id=current_user.id).first()
+    if rating:
+        rating.rating = score
+        rating.created_at = datetime.utcnow()
+    else:
+        rating = RecipeRating(recipe_id=recipe_id, user_id=current_user.id, rating=score)
+        db.session.add(rating)
+    db.session.commit()
+    flash('Puanınız kaydedildi!', 'success')
+    return redirect(url_for('recipe', id=recipe_id))
+
+GEMINI_API_KEY = "AIzaSyCMpwLk4VkG__bu5vBMpSS7d327PzNED4Q"
+
+@app.route('/api/alternatif', methods=['POST'])
+@login_required
+def alternatif_malzeme():
+    data = request.get_json()
+    user_question = data.get('question', '')
+    if not user_question:
+        return jsonify({'success': False, 'message': 'Soru boş olamaz.'}), 400
+
+    gemini_url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent"
+    headers = {"Content-Type": "application/json"}
+    payload = {
+        "contents": [
+            {
+                "parts": [
+                    {"text": user_question}
+                ]
+            }
+        ]
+    }
+    params = {"key": GEMINI_API_KEY}
+
+    try:
+        response = requests.post(gemini_url, headers=headers, params=params, json=payload, timeout=15)
+        response.raise_for_status()
+        gemini_data = response.json()
+        answer = gemini_data.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
+        if not answer:
+            answer = "Üzgünüm, bu konuda yardımcı olamadım."
+        return jsonify({'success': True, 'answer': answer})
+    except Exception as e:
+        return jsonify({'success': False, 'message': f'Hata: {str(e)}'}), 500
 
 if __name__ == '__main__':
     with app.app_context():

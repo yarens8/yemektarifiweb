@@ -62,6 +62,30 @@
         </div>
     </div>
 
+    <div class="horizontal-rating-box">
+        <div class="rating-summary">
+            <span class="star-icon"><i class="fas fa-star"></i></span>
+            <span class="avg-rating">{{ avg_rating }}</span>
+            <span class="rating-count">({{ rating_count }} değerlendirme)</span>
+        </div>
+        <div class="user-rating-form">
+            {% if current_user.is_authenticated %}
+                <form action="{{ url_for('rate_recipe', recipe_id=recipe.id) }}" method="post" class="star-rating-form" id="star-rating-form">
+                    <span class="user-rating-label">Senin puanın:</span>
+                    <div class="star-rating" id="star-rating">
+                        {% for i in range(1, 6) %}
+                            <button type="submit" name="score" value="{{ i }}" class="star-btn" aria-label="{{ i }} yıldız">
+                                <i class="{% if user_rating and i <= user_rating %}fas{% else %}far{% endif %} fa-star"></i>
+                            </button>
+                        {% endfor %}
+                    </div>
+                </form>
+            {% else %}
+                <div class="login-to-rate">Puan vermek için <a href="{{ url_for('login') }}">giriş yapın</a>.</div>
+            {% endif %}
+        </div>
+    </div>
+
     <div class="recipe-content">
         <div class="recipe-main-content">
             <!-- Malzemeler Bölümü -->
@@ -167,6 +191,39 @@
             <i class="fas fa-arrow-left"></i>
             <span>Geri Dön</span>
         </a>
+    </div>
+
+    <div class="comment-section fancy-comment-section">
+        <div class="fancy-comment-title">
+            <i class="fas fa-comments"></i>
+            <span>Yorumlar</span>
+        </div>
+        {% if current_user.is_authenticated %}
+        <form action="{{ url_for('add_comment', recipe_id=recipe.id) }}" method="post" class="fancy-comment-form">
+            <textarea name="content" class="fancy-comment-input" rows="2" placeholder="Yorumunuzu yazın..." required></textarea>
+            <button type="submit" class="fancy-comment-btn">Gönder <i class="fas fa-paper-plane"></i></button>
+        </form>
+        {% else %}
+        <div class="login-to-comment">Yorum yapmak için <a href="{{ url_for('login') }}">giriş yapın</a>.</div>
+        {% endif %}
+        <div class="comments-list">
+            {% for comment in recipe.comments|sort(attribute='created_at', reverse=True) %}
+            <div class="fancy-comment-box">
+                <div class="comment-header">
+                    <span class="comment-user"><i class="fas fa-user"></i> {{ comment.user.username }}</span>
+                    <span class="comment-date">{{ comment.created_at.strftime('%d.%m.%Y %H:%M') }}</span>
+                    {% if current_user.is_authenticated and (comment.user_id == current_user.id or current_user.id == 2) %}
+                    <form action="{{ url_for('delete_comment', comment_id=comment.id) }}" method="post" class="delete-comment-form" style="display:inline;">
+                        <button type="submit" class="delete-comment-btn fancy-delete-btn" title="Yorumu Sil"><i class="fas fa-trash-alt"></i></button>
+                    </form>
+                    {% endif %}
+                </div>
+                <div class="comment-content">{{ comment.content }}</div>
+            </div>
+            {% else %}
+            <div class="fancy-no-comments">Henüz yorum yok. İlk yorumu sen yap!</div>
+            {% endfor %}
+        </div>
     </div>
 </div>
 
@@ -699,5 +756,278 @@
         font-size: 0.95rem;
     }
 }
+
+.fancy-comment-section {
+    background: #fff;
+    border-radius: 20px;
+    box-shadow: 0 2px 15px rgba(255,107,107,0.08);
+    padding: 2rem;
+    max-width: 600px;
+    margin: 2rem auto;
+    border: 1px solid rgba(255,182,182,0.3);
+}
+
+.fancy-comment-title {
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: #FF6B6B;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.fancy-comment-title i {
+    color: #FF6B6B;
+    font-size: 1.2em;
+}
+
+.fancy-comment-form {
+    display: flex;
+    gap: 0.8rem;
+    margin-bottom: 1.5rem;
+    align-items: center;
+}
+
+.fancy-comment-input {
+    flex: 1;
+    border-radius: 12px;
+    border: 1px solid rgba(255,182,182,0.5);
+    padding: 1.2rem 1.2rem;
+    font-size: 1.08rem;
+    min-height: 64px;
+    background: #fff;
+    color: #444;
+    transition: all 0.2s ease;
+}
+
+.fancy-comment-input:focus {
+    border-color: #FF6B6B;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(255,107,107,0.1);
+}
+
+.fancy-comment-input::placeholder {
+    color: #bbb;
+}
+
+.fancy-comment-btn {
+    background: #FF6B6B;
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    padding: 0.8rem 1.2rem;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.fancy-comment-btn:hover {
+    background: #ff5252;
+    transform: translateY(-1px);
+}
+
+.fancy-comment-btn i {
+    font-size: 0.9em;
+}
+
+.fancy-comment-box {
+    background: #fff;
+    border-radius: 12px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border: 1px solid rgba(255,182,182,0.2);
+    transition: all 0.2s ease;
+}
+
+.fancy-comment-box:hover {
+    border-color: rgba(255,107,107,0.3);
+    box-shadow: 0 2px 8px rgba(255,107,107,0.05);
+}
+
+.comment-header {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    font-size: 0.9rem;
+    color: #888;
+    margin-bottom: 0.5rem;
+}
+
+.comment-user i {
+    color: #FF6B6B;
+    margin-right: 0.3em;
+}
+
+.comment-content {
+    color: #333;
+    font-size: 1rem;
+    line-height: 1.5;
+    margin-left: 0.1rem;
+}
+
+.fancy-delete-btn {
+    background: none;
+    border: none;
+    color: #FF6B6B;
+    font-size: 0.9em;
+    cursor: pointer;
+    padding: 0.3em;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+    opacity: 0.6;
+}
+
+.fancy-delete-btn:hover {
+    opacity: 1;
+    background: rgba(255,107,107,0.1);
+}
+
+.fancy-no-comments {
+    color: #888;
+    font-size: 1rem;
+    text-align: center;
+    margin-top: 1.5rem;
+    font-style: italic;
+}
+
+@media (max-width: 700px) {
+    .fancy-comment-section {
+        padding: 1.5rem 1rem;
+        margin: 1.5rem 1rem;
+    }
+    
+    .fancy-comment-form {
+        flex-direction: column;
+        gap: 0.8rem;
+    }
+    
+    .fancy-comment-btn {
+        width: 100%;
+    }
+}
+
+.horizontal-rating-box {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #fff;
+    border-radius: 18px;
+    box-shadow: 0 2px 12px #ff6b6b18;
+    padding: 0.7rem 1.5rem;
+    margin: 1.2rem auto 2rem auto;
+    max-width: 700px;
+    min-height: 64px;
+    border: 2px solid #FFB6B6;
+    gap: 1.2rem;
+}
+
+.rating-summary {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1.15rem;
+    color: #FF6B6B;
+    font-weight: 700;
+}
+
+.rating-summary .star-icon {
+    color: #FF6B6B;
+    font-size: 1.5rem;
+}
+
+.rating-summary .avg-rating {
+    color: #FF6B6B;
+    font-size: 1.15rem;
+    font-weight: 700;
+}
+
+.rating-summary .rating-count {
+    color: #888;
+    font-size: 1rem;
+    font-weight: 400;
+}
+
+.user-rating-form {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+}
+
+.user-rating-label {
+    color: #888;
+    font-size: 1rem;
+    margin-right: 0.5rem;
+    font-weight: 500;
+}
+
+.star-rating {
+    display: flex;
+    gap: 0.15rem;
+}
+
+.star-btn {
+    background: none;
+    border: none;
+    padding: 0.1rem;
+    cursor: pointer;
+    font-size: 1.7rem;
+    color: #FFD700;
+    transition: transform 0.12s;
+}
+
+.star-btn:hover {
+    transform: scale(1.18) rotate(-6deg);
+    filter: drop-shadow(0 4px 12px #ff6b6b88);
+}
+
+.star-btn:focus {
+    outline: none;
+}
+
+.star-btn i {
+    color: #FFD700;
+}
+
+@media (max-width: 600px) {
+    .horizontal-rating-box {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.7rem;
+        padding: 1rem;
+    }
+    .user-rating-form {
+        width: 100%;
+        justify-content: flex-start;
+    }
+}
 </style>
+
+<script>
+// Yıldız hover ve tıklama efektleri
+const starBtns = document.querySelectorAll('.star-btn');
+let selected = {{ user_rating or 0 }};
+starBtns.forEach((btn, idx) => {
+    btn.addEventListener('mouseenter', () => {
+        for(let i=0; i<starBtns.length; i++) {
+            starBtns[i].querySelector('i').className = (i <= idx ? 'fas' : 'far') + ' fa-star';
+        }
+    });
+    btn.addEventListener('mouseleave', () => {
+        for(let i=0; i<starBtns.length; i++) {
+            starBtns[i].querySelector('i').className = (selected && i < selected ? 'fas' : 'far') + ' fa-star';
+        }
+    });
+    btn.addEventListener('click', () => {
+        selected = idx + 1;
+        for(let i=0; i<starBtns.length; i++) {
+            starBtns[i].querySelector('i').className = (i < selected ? 'fas' : 'far') + ' fa-star';
+        }
+    });
+});
+</script>
 {% endblock %}

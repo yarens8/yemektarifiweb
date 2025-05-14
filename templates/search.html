@@ -8,15 +8,15 @@
         <form action="{{ url_for('search') }}" method="get" class="modern-search-form">
             <div class="modern-search-box">
                 <span class="modern-search-icon"><i class="fas fa-search"></i></span>
-                <input type="text" 
-                       name="q" 
+                        <input type="text" 
+                               name="q" 
                        class="modern-search-input" 
                        placeholder="Tarif, malzeme veya kategori ara..." 
-                       value="{{ query }}"
-                       autocomplete="off">
+                               value="{{ query }}"
+                               autocomplete="off">
                 <button type="submit" class="modern-search-btn"><i class="fas fa-search"></i></button>
-            </div>
-        </form>
+                </div>
+            </form>
         <div class="modern-popular-searches mt-3">
             <span class="modern-popular-label">Popüler Aramalar:</span>
             <a href="?q=kurabiye" class="modern-popular-tag">Kurabiye</a>
@@ -57,10 +57,10 @@
                             </h3>
                             <div class="modern-recipe-info">
                                 {% if recipe.preparation_time %}
-                                    <span><i class="fas fa-clock"></i> {{ recipe.preparation_time }}</span>
+                                <span><i class="fas fa-clock"></i> {{ recipe.preparation_time }}</span>
                                 {% endif %}
                                 {% if recipe.serving_size %}
-                                    <span><i class="fas fa-users"></i> {{ recipe.serving_size }}</span>
+                                <span><i class="fas fa-users"></i> {{ recipe.serving_size }}</span>
                                 {% endif %}
                             </div>
                             <div class="modern-recipe-ingredients">
@@ -69,7 +69,7 @@
                             <div class="modern-recipe-actions">
                                 <a href="{{ url_for('recipe', id=recipe.id) }}" class="btn btn-primary btn-modern-view">
                                     <i class="fas fa-book-open"></i> Görüntüle
-                                </a>
+                            </a>
                             </div>
                         </div>
                     </div>
@@ -206,11 +206,11 @@ body {
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
-}
+    }
 .btn-modern-view:hover {
     background: #ff5252;
     color: #fff;
-}
+    }
 @media (max-width: 600px) {
     .modern-recipe-grid {
         flex-direction: column;
