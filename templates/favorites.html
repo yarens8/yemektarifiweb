@@ -19,7 +19,7 @@
                             <span><i class="fas fa-clock"></i> {{ recipe.cooking_time }}</span>
                             <span><i class="fas fa-user-friends"></i> {{ recipe.serving_size }}</span>
                         </div>
-                        <a href="{{ url_for('recipe', id=recipe.id) }}" class="favorites-view-btn">
+                        <a href="{% if current_user.is_authenticated %}{{ url_for('recipe', id=recipe.id) }}{% else %}{{ url_for('login') }}{% endif %}" class="favorites-view-btn">
                             <i class="fas fa-book-open"></i> Tarifi Görüntüle
                         </a>
                     </div>

@@ -15,8 +15,9 @@
 /* Base Styles */
 body {
     font-family: 'Poppins', sans-serif;
-    background-color: #f0f2f5;
+    background-color: #f7f8fa;
     color: var(--text-color);
+    font-size: 16px;
     line-height: 1.6;
 }
 
@@ -92,6 +93,32 @@ body {
 
 .navbar .btn.active, .btn-home.active, .btn-username.active, .btn-add-recipe.active, .btn-favorites.active, .btn-logout.active {
     color: #fff !important;
+}
+
+.navbar .btn-home,
+.navbar .btn-favorites,
+.navbar .btn-username,
+.navbar .btn-logout {
+    transition: color 0.18s, transform 0.18s;
+}
+
+.navbar .btn-home:hover,
+.navbar .btn-favorites:hover,
+.navbar .btn-username:hover,
+.navbar .btn-logout:hover {
+    background: transparent !important;
+    color: #fff !important;
+    transform: scale(1.08);
+    box-shadow: none;
+    transition: color 0.18s;
+}
+
+.navbar .btn-home:hover i,
+.navbar .btn-favorites:hover i,
+.navbar .btn-username:hover i,
+.navbar .btn-logout:hover i {
+    color: #fff !important;
+    transition: color 0.18s;
 }
 
 /* Hero Section */
@@ -332,22 +359,22 @@ body {
 }
 /* Auth Pages Styles */
 .auth-container {
-    min-height: 80vh;
+    min-height: 90vh;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 2rem;
-    background: linear-gradient(135deg, rgba(255,107,107,0.1), rgba(108,99,255,0.1));
+    padding: 1.5rem;
+    background: transparent;
 }
 
 .auth-box {
     background: var(--white);
-    padding: 3rem;
-    border-radius: 30px;
-    box-shadow: var(--hover-shadow);
+    padding: 2.2rem;
+    border-radius: 28px;
+    box-shadow: 0 8px 32px rgba(255,107,107,0.10), 0 1.5px 8px rgba(44,62,80,0.07);
     width: 100%;
-    max-width: 450px;
-    transition: all 0.3s ease;
+    max-width: 440px;
+    transition: all 0.3s cubic-bezier(.4,1.3,.6,1);
 }
 
 .auth-box:hover {
@@ -413,15 +440,13 @@ body {
 }
 
 .auth-link {
-    color: var(--primary-color);
-    text-decoration: none;
+    color: #FF6B6B !important;
     font-weight: 600;
-    transition: all 0.3s ease;
+    transition: color 0.18s;
 }
 
 .auth-link:hover {
-    color: var(--accent-color);
-    text-decoration: underline;
+    color: #d84343 !important;
 }
 
 @keyframes bounceIn {
@@ -1264,7 +1289,7 @@ body {
 
 .btn-add-recipe {
     background: transparent !important;
-    color: #fff !important;
+    color: #2D3436 !important;
     border: none;
     padding: 0.5rem 1rem;
     border-radius: 8px;
@@ -1275,11 +1300,14 @@ body {
 
 .btn-add-recipe i {
     color: #fff !important;
+    transition: color 0.18s;
 }
 
 .btn-add-recipe:hover, .btn-add-recipe:focus {
-    background: #FF6B6B !important;
+    background: transparent !important;
     color: #fff !important;
+    transform: scale(1.08);
+    box-shadow: none;
 }
 
 .btn-add-recipe:hover i, .btn-add-recipe:focus i {
@@ -1298,4 +1326,49 @@ body {
 .recipe-author i {
     font-size: 0.85rem;
     color: var(--primary-color);
+}
+
+.navbar .btn-username {
+    color: #fff !important;
+    transition: color 0.18s, transform 0.18s;
+}
+.navbar .btn-username i {
+    color: #fff !important;
+    transition: color 0.18s;
+}
+
+/* Kesin override: Yeni Tarif butonu her durumda beyaz */
+.navbar .btn-add-recipe,
+.btn-add-recipe {
+    color: #fff !important;
+    transition: color 0.18s, transform 0.18s;
+}
+.navbar .btn-add-recipe i,
+.btn-add-recipe i {
+    color: #fff !important;
+    transition: color 0.18s;
+}
+.navbar .btn-add-recipe:hover,
+.btn-add-recipe:hover,
+.navbar .btn-add-recipe:focus,
+.btn-add-recipe:focus {
+    color: #fff !important;
+    background: transparent !important;
+    transform: scale(1.08);
+    box-shadow: none;
+}
+.navbar .btn-add-recipe:hover i,
+.btn-add-recipe:hover i,
+.navbar .btn-add-recipe:focus i,
+.btn-add-recipe:focus i {
+    color: #fff !important;
+}
+
+.login-link {
+    color: #FF6B6B !important;
+    font-weight: 600;
+    transition: color 0.18s;
+}
+.login-link:hover {
+    color: #d84343 !important;
 }

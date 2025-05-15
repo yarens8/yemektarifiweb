@@ -197,7 +197,16 @@
     <div class="recipes-grid">
         {% for recipe in popular_recipes %}
         <div class="recipe-card">
-            <img src="{{ url_for('static', filename='recipe_images/' + recipe.image_filename) if recipe.image_filename else url_for('static', filename='recipe_images/default.jpg') }}" alt="{{ recipe.title }}" class="recipe-image">
+            <div class="recipe-image">
+                <img src="{{ url_for('static', filename='recipe_images/' + recipe.image_filename) }}" alt="{{ recipe.title }}">
+                {% if current_user.is_authenticated %}
+                <button class="favorite-btn {% if recipe in current_user.favorites %}active{% endif %}"
+                        data-recipe-id="{{ recipe.id }}"
+                        style="position:absolute;top:14px;right:14px;background:rgba(255,255,255,0.95);box-shadow:0 2px 8px #ff6b6b22;border-radius:50%;width:40px;height:40px;display:flex;align-items:center;justify-content:center;font-size:1.4rem;z-index:10;transition:all 0.18s;">
+                    <i class="fas fa-heart"></i>
+                </button>
+                {% endif %}
+            </div>
             <div class="recipe-content">
                 <span class="recipe-category">{{ recipe.category.name }}</span>
                 <h3 class="recipe-title">{{ recipe.title }}</h3>
@@ -216,7 +225,7 @@
                     </span>
                 </div>
                 <div class="recipe-footer">
-                    <a href="{{ url_for('recipe', id=recipe.id) }}" class="btn-view">
+                    <a href="{% if current_user.is_authenticated %}{{ url_for('recipe', id=recipe.id) }}{% else %}{{ url_for('login') }}{% endif %}" class="btn-view">
                         Tarifi Görüntüle <i class="fas fa-arrow-right"></i>
                     </a>
                 </div>
@@ -257,7 +266,7 @@
                     </span>
                 </div>
                 <div class="recipe-footer">
-                    <a href="{{ url_for('recipe', id=recipe.id) }}" class="btn-view">
+                    <a href="{% if current_user.is_authenticated %}{{ url_for('recipe', id=recipe.id) }}{% else %}{{ url_for('login') }}{% endif %}" class="btn-view">
                         Tarifi Görüntüle <i class="fas fa-arrow-right"></i>
                     </a>
                 </div>
@@ -1654,6 +1663,13 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Kategorileri yükle
     loadCategories();
+
+    document.querySelectorAll('.favorite-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            const recipeId = this.getAttribute('data-recipe-id');
+            toggleFavorite(recipeId, this);
+        });
+    });
 });
 
 function showNotification(message) {

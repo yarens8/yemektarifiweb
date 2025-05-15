@@ -70,12 +70,13 @@
                         {% for recipe in user_recipes %}
                         <div class="recipe-card">
                             <div class="recipe-image">
-                                {% if recipe.image_filename %}
-                                    <img src="{{ url_for('static', filename='recipe_images/' + recipe.image_filename) }}" alt="{{ recipe.title }}">
-                                {% else %}
-                                    <div class="recipe-image-placeholder">
-                                        <i class="fas fa-utensils"></i>
-                                    </div>
+                                <img src="{{ url_for('static', filename='recipe_images/' + (recipe.image_filename or 'default-recipe.jpg')) }}" alt="{{ recipe.title }}">
+                                {% if current_user.is_authenticated %}
+                                <button class="favorite-btn {% if recipe in current_user.favorites %}active{% endif %}"
+                                        style="position:absolute;top:14px;right:14px;background:rgba(255,255,255,0.95);box-shadow:0 2px 8px #ff6b6b22;border-radius:50%;width:40px;height:40px;display:flex;align-items:center;justify-content:center;font-size:1.4rem;z-index:10;transition:all 0.18s;"
+                                        onclick="toggleFavorite({{ recipe.id }}, this)">
+                                    <i class="fas fa-heart"></i>
+                                </button>
                                 {% endif %}
                                 <div class="recipe-stats">
                                     <span><i class="fas fa-eye"></i> {{ recipe.views }}</span>
@@ -100,7 +101,7 @@
                                 </div>
                                 <p class="recipe-ingredients">{{ recipe.ingredients }}</p>
                                 <div class="recipe-actions">
-                                    <a href="{{ url_for('recipe', id=recipe.id) }}" class="action-btn view-btn">
+                                    <a href="{% if current_user.is_authenticated %}{{ url_for('recipe', id=recipe.id) }}{% else %}{{ url_for('login') }}{% endif %}" class="action-btn view-btn">
                                         <i class="fas fa-eye"></i>
                                         Görüntüle
                                     </a>
@@ -137,12 +138,13 @@
                         {% for recipe in favorite_recipes %}
                         <div class="recipe-card">
                             <div class="recipe-image">
-                                {% if recipe.image_filename %}
-                                    <img src="{{ url_for('static', filename='recipe_images/' + recipe.image_filename) }}" alt="{{ recipe.title }}">
-                                {% else %}
-                                    <div class="recipe-image-placeholder">
-                                        <i class="fas fa-utensils"></i>
-                                    </div>
+                                <img src="{{ url_for('static', filename='recipe_images/' + (recipe.image_filename or 'default-recipe.jpg')) }}" alt="{{ recipe.title }}">
+                                {% if current_user.is_authenticated %}
+                                <button class="favorite-btn {% if recipe in current_user.favorites %}active{% endif %}"
+                                        style="position:absolute;top:14px;right:14px;background:rgba(255,255,255,0.95);box-shadow:0 2px 8px #ff6b6b22;border-radius:50%;width:40px;height:40px;display:flex;align-items:center;justify-content:center;font-size:1.4rem;z-index:10;transition:all 0.18s;"
+                                        onclick="toggleFavorite({{ recipe.id }}, this)">
+                                    <i class="fas fa-heart"></i>
+                                </button>
                                 {% endif %}
                                 <div class="recipe-stats">
                                     <span><i class="fas fa-eye"></i> {{ recipe.views }}</span>
@@ -167,7 +169,7 @@
                                 </div>
                                 <p class="recipe-ingredients">{{ recipe.ingredients }}</p>
                                 <div class="recipe-actions">
-                                    <a href="{{ url_for('recipe', id=recipe.id) }}" class="action-btn view-btn">
+                                    <a href="{% if current_user.is_authenticated %}{{ url_for('recipe', id=recipe.id) }}{% else %}{{ url_for('login') }}{% endif %}" class="action-btn view-btn">
                                         <i class="fas fa-eye"></i>
                                         Görüntüle
                                     </a>
@@ -1050,7 +1052,7 @@ function deleteRecipe(recipeId) {
     });
 }
 
-function toggleFavorite(recipeId) {
+function toggleFavorite(recipeId, button) {
     fetch(`/recipe/${recipeId}/favorite`, {
         method: 'POST',
         headers: {
@@ -1059,14 +1061,11 @@ function toggleFavorite(recipeId) {
     })
     .then(response => response.json())
     .then(data => {
-        const card = document.querySelector(`button[data-recipe-id="${recipeId}"]`).closest('.recipe-card');
-        if (card) {
-            card.style.opacity = '0';
-            card.style.transform = 'scale(0.8)';
-            setTimeout(() => {
-                card.remove();
-                updateCounts();
-            }, 300);
+        if (data.success) {
+            button.classList.toggle('active');
+            updateCounts();
+        } else {
+            alert(data.message || 'Tarif favorilemek için bir hata oluştu. Lütfen tekrar deneyin.');
         }
     })
     .catch(error => console.error('Error:', error));

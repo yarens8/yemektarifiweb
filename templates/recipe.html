@@ -7,6 +7,13 @@
         <div class="recipe-cover-image">
             <img src="{{ url_for('static', filename='recipe_images/' + recipe.image_filename) }}" 
                  alt="{{ recipe.title }}">
+            {% if current_user.is_authenticated %}
+            <button class="favorite-btn {% if recipe in current_user.favorites %}active{% endif %}"
+                    style="position:absolute;top:18px;right:18px;background:rgba(255,255,255,0.95);box-shadow:0 2px 8px #ff6b6b22;border-radius:50%;width:48px;height:48px;display:flex;align-items:center;justify-content:center;font-size:2rem;z-index:10;transition:all 0.18s;"
+                    onclick="toggleFavorite({{ recipe.id }}, this)">
+                <i class="fas fa-heart"></i>
+            </button>
+            {% endif %}
             <div class="recipe-overlay">
                 <div class="recipe-header-content">
                     <div class="recipe-badges">
@@ -81,7 +88,7 @@
                     </div>
                 </form>
             {% else %}
-                <div class="login-to-rate">Puan vermek için <a href="{{ url_for('login') }}">giriş yapın</a>.</div>
+                <div class="login-to-rate">Puan vermek için <a href="{{ url_for('login') }}" class="auth-link">giriş yapın</a>.</div>
             {% endif %}
         </div>
     </div>
@@ -204,7 +211,7 @@
             <button type="submit" class="fancy-comment-btn">Gönder <i class="fas fa-paper-plane"></i></button>
         </form>
         {% else %}
-        <div class="login-to-comment">Yorum yapmak için <a href="{{ url_for('login') }}">giriş yapın</a>.</div>
+        <div class="login-to-comment">Yorum yapmak için <a href="{{ url_for('login') }}" class="auth-link">giriş yapın</a>.</div>
         {% endif %}
         <div class="comments-list">
             {% for comment in recipe.comments|sort(attribute='created_at', reverse=True) %}

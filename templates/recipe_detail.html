@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="recipe-container">
+    <div class="recipe-header">
+        <h1>{{ recipe.title }}</h1>
+        {% if current_user.is_authenticated %}
+        <button class="favorite-btn {% if recipe in current_user.favorites %}active{% endif %}" 
+                onclick="toggleFavorite({{ recipe.id }}, this)">
+            <i class="fas fa-heart"></i>
+        </button>
+        {% endif %}
+    </div>
+    
+    <div class="recipe-content">
+        <!-- Diğer tarif detayları buraya gelecek -->
+    </div>
+</div>
+{% endblock %} 

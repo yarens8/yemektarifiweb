@@ -53,7 +53,7 @@
                                 <span class="modern-recipe-views"><i class="fas fa-eye"></i> {{ recipe.views }}</span>
                             </div>
                             <h3 class="modern-recipe-title">
-                                <a href="{{ url_for('recipe', id=recipe.id) }}" class="modern-recipe-link">{{ recipe.title }}</a>
+                                <a href="{% if current_user.is_authenticated %}{{ url_for('recipe', id=recipe.id) }}{% else %}{{ url_for('login') }}{% endif %}" class="modern-recipe-link">{{ recipe.title }}</a>
                             </h3>
                             <div class="modern-recipe-info">
                                 {% if recipe.preparation_time %}
@@ -67,9 +67,9 @@
                                 {{ recipe.ingredients[:150] }}{% if recipe.ingredients|length > 150 %}...{% endif %}
                             </div>
                             <div class="modern-recipe-actions">
-                                <a href="{{ url_for('recipe', id=recipe.id) }}" class="btn btn-primary btn-modern-view">
+                                <a href="{% if current_user.is_authenticated %}{{ url_for('recipe', id=recipe.id) }}{% else %}{{ url_for('login') }}{% endif %}" class="btn btn-primary btn-modern-view">
                                     <i class="fas fa-book-open"></i> Görüntüle
-                            </a>
+                                </a>
                             </div>
                         </div>
                     </div>

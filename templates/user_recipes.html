@@ -38,7 +38,7 @@
                                 </div>
                             </div>
                             <h4 class="recipe-title">
-                                <a href="{{ url_for('recipe', id=recipe.id) }}" class="recipe-link">{{ recipe.title }}</a>
+                                <a href="{% if current_user.is_authenticated %}{{ url_for('recipe', id=recipe.id) }}{% else %}{{ url_for('login') }}{% endif %}" class="recipe-link">{{ recipe.title }}</a>
                             </h4>
                             <div class="recipe-info-section">
                                 <div class="recipe-info">
