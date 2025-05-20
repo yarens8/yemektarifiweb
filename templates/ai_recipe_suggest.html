@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>AI Tarif Önerileri</h2>
+    
+    <form method="POST" class="mb-4">
+        <div class="form-group">
+            <label for="ingredients">Malzemelerinizi girin (her satıra bir malzeme):</label>
+            <textarea class="form-control" id="ingredients" name="ingredients" rows="5" required></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary">Tarif Öner</button>
+    </form>
+
+    {% if error %}
+    <div class="alert alert-danger">
+        {{ error }}
+    </div>
+    {% endif %}
+
+    {% if ai_recipes %}
+    <div class="row">
+        {% for recipe in ai_recipes %}
+        <div class="col-md-4 mb-4">
+            <div class="card h-100">
+                {% if recipe.image_url %}
+                <img src="{{ recipe.image_url }}" class="card-img-top" alt="{{ recipe.title }}" style="height: 200px; object-fit: cover;">
+                {% endif %}
+                <div class="card-body">
+                    <h5 class="card-title">{{ recipe.title }}</h5>
+                    <p class="card-text">
+                        <small class="text-muted">
+                            Hazırlama süresi: {{ recipe.ready_in_minutes }} dakika<br>
+                            Porsiyon: {{ recipe.servings }}
+                        </small>
+                    </p>
+                    <h6>Malzemeler:</h6>
+                    <ul>
+                        {% for ingredient in recipe.ingredients %}
+                        <li>{{ ingredient }}</li>
+                        {% endfor %}
+                    </ul>
+                    <h6>Yapılışı:</h6>
+                    <p>{{ recipe.instructions }}</p>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %} 

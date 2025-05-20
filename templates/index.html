@@ -171,6 +171,11 @@
     </div>
     
     <div id="suggestedRecipes" class="suggested-recipes"></div>
+    <div id="ai-recipe-btn-container" style="text-align:center; margin-top: 2rem; display:none;">
+        <a href="/ai_recipe" class="btn btn-primary btn-lg">
+            <i class="fas fa-robot"></i> Farklı Tarifler Bul
+        </a>
+    </div>
 </div>
 
 <!-- Category Filter -->
@@ -1640,6 +1645,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         </a>
                     </div>
                 `).join('');
+                document.getElementById('ai-recipe-btn-container').style.display = 'block';
             } else {
                 suggestedRecipesContainer.innerHTML = `
                     <div class="no-results">
@@ -1647,6 +1653,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         <p>Bu malzemelerle eşleşen tarif bulunamadı.</p>
                     </div>
                 `;
+                document.getElementById('ai-recipe-btn-container').style.display = 'none';
             }
             
         } catch (error) {
@@ -1658,6 +1665,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <small>${error.message}</small>
                 </div>
             `;
+            document.getElementById('ai-recipe-btn-container').style.display = 'none';
         }
     });
     

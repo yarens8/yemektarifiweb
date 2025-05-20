@@ -5,8 +5,8 @@
     <div class="recipe-header">
         <h1>{{ recipe.title }}</h1>
         {% if current_user.is_authenticated %}
-        <button class="favorite-btn {% if recipe in current_user.favorites %}active{% endif %}" 
-                onclick="toggleFavorite({{ recipe.id }}, this)">
+        <button class="favorite-btn {% if recipe in current_user.favorites %}active{% endif %}"
+                onclick="toggleFavorite('{{ recipe.id }}', this)">
             <i class="fas fa-heart"></i>
         </button>
         {% endif %}

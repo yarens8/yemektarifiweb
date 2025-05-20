@@ -141,7 +141,7 @@ body {
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
-    text-fill-color: transparent;
+    -text-fill-color: transparent;
     text-shadow: 2px 2px 8px rgba(255,255,255,0.7), 0 2px 8px rgba(0,0,0,0.08);
     letter-spacing: 1px;
 }

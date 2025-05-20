@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+.ai-recipe-hero {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 2.5rem;
+}
+.ai-recipe-hero-icon {
+    font-size: 3.5rem;
+    color: #FF6B6B;
+    margin-bottom: 0.5rem;
+}
+.ai-recipe-card {
+    background: #fff;
+    border-radius: 18px;
+    box-shadow: 0 4px 24px rgba(255,107,107,0.10);
+    padding: 2.5rem 2rem 2rem 2rem;
+    max-width: 750px;
+    margin: 0 auto;
+    margin-bottom: 2rem;
+}
+.ai-recipe-form textarea {
+    border-radius: 12px;
+    border: 2px solid #FFB6B6;
+    font-size: 1.1rem;
+    padding: 1.2rem;
+    transition: border 0.2s, box-shadow 0.2s;
+    min-height: 260px;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    resize: vertical;
+}
+.ai-recipe-form textarea:focus {
+    border: 2px solid #FF6B6B;
+    box-shadow: 0 2px 8px #ff6b6b22;
+    outline: none;
+}
+.ai-recipe-form label {
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+    color: #FF6B6B;
+}
+.ai-recipe-btn-container {
+    display: flex;
+    justify-content: center;
+    margin-top: 1.2rem;
+}
+.ai-recipe-btn {
+    background: linear-gradient(90deg, #FF6B6B 0%, #FFB6B6 100%);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    padding: 0.9rem 2.2rem;
+    font-size: 1.15rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.13s;
+    box-shadow: 0 2px 8px #ffb6b622;
+}
+.ai-recipe-btn:hover {
+    background: linear-gradient(90deg, #FF6B6B 0%, #FF8C8C 100%);
+    transform: scale(1.04);
+}
+.ai-recipe-error {
+    background: #fff0f0;
+    color: #d32f2f;
+    border-radius: 10px;
+    padding: 1rem 1.2rem;
+    margin-top: 1rem;
+    font-size: 1.05rem;
+    box-shadow: 0 1px 6px #ffb6b611;
+    border: 1px solid #FFB6B6;
+}
+.ai-recipe-result-card {
+    background: #f8f9fa;
+    border-radius: 14px;
+    box-shadow: 0 2px 8px #ffb6b611;
+    padding: 1.5rem 1.2rem;
+    margin-top: 1.5rem;
+    font-size: 1.08rem;
+    color: #444;
+    white-space: pre-line;
+}
+@media (max-width: 900px) {
+    .ai-recipe-card { max-width: 98vw; }
+}
+@media (max-width: 600px) {
+    .ai-recipe-card { padding: 1.2rem 0.5rem; }
+    .ai-recipe-result-card { padding: 1rem 0.5rem; }
+    .ai-recipe-form textarea { min-height: 120px; }
+}
+
+/* Footer'ı alta sabitle */
+body, html {
+    height: 100%;
+}
+body {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+.footer {
+    margin-top: auto !important;
+    position: relative;
+    width: 100%;
+}
+</style>
+
+<div class="ai-recipe-hero">
+    <div class="ai-recipe-hero-icon">
+        <i class="fas fa-robot"></i>
+    </div>
+    <h2 style="font-weight:700; color:#FF6B6B;">AI ile Farklı Tarifler Bul</h2>
+    <p style="color:#888; font-size:1.1rem;">Malzemelerini yaz, yapay zekadan yaratıcı tarif önerileri al!</p>
+</div>
+
+<div class="ai-recipe-card">
+    <form method="POST" class="ai-recipe-form">
+        <label for="ingredients">Malzemelerinizi girin:</label>
+        <textarea id="ingredients" name="ingredients" required>{{ request.form.ingredients or '' }}</textarea>
+        <div class="ai-recipe-btn-container">
+            <button type="submit" class="ai-recipe-btn"><i class="fas fa-magic"></i> Tarif Öner</button>
+        </div>
+    </form>
+    {% if error %}
+    <div class="ai-recipe-error">{{ error }}</div>
+    {% endif %}
+    {% if ai_recipes %}
+    <div class="ai-recipe-result-card">
+        <strong><i class="fas fa-utensils"></i> AI Tarif Önerileri</strong>
+        <div style="margin-top:0.7rem;">{{ ai_recipes }}</div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %} 
