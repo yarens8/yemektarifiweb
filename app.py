@@ -17,6 +17,13 @@ from flask_wtf.csrf import generate_csrf
 from flask_cors import CORS
 from sqlalchemy import func
 import requests
+import openai
+from dotenv import load_dotenv
+import time
+import google.generativeai as genai
+
+# Ortam değişkenlerini yükle
+load_dotenv()
 
 # Flask uygulamasını oluştur
 app = Flask(__name__)
@@ -46,7 +53,7 @@ server = 'Yaren\SQLEXPRESS'
 database = 'YemekTarifleri'
 
 # Windows Authentication ile bağlantı
-app.config['SQLALCHEMY_DATABASE_URI'] = f'mssql+pyodbc://{server}/{database}?driver=ODBC+Driver+17+for+SQL+Server&trusted_connection=yes'
+app.config['SQLALCHEMY_DATABASE_URI'] = f'mssql+pyodbc://{server}/{database}?driver=ODBC+Driver+18+for+SQL+Server&trusted_connection=yes&TrustServerCertificate=yes'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY'] = 'gizli-anahtar-buraya'
 
@@ -1009,39 +1016,71 @@ def rate_recipe(recipe_id):
     flash('Puanınız kaydedildi!', 'success')
     return redirect(url_for('recipe', id=recipe_id))
 
-GEMINI_API_KEY = "AIzaSyCMpwLk4VkG__bu5vBMpSS7d327PzNED4Q"
+GEMINI_API_KEY = "AIzaSyCJGZtsQCQ8zBJ1AHMYD8-wSwrDgiFFLu0"
+GEMINI_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
 
-@app.route('/api/alternatif', methods=['POST'])
-@login_required
-def alternatif_malzeme():
-    data = request.get_json()
-    user_question = data.get('question', '')
-    if not user_question:
-        return jsonify({'success': False, 'message': 'Soru boş olamaz.'}), 400
-
-    gemini_url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent"
-    headers = {"Content-Type": "application/json"}
-    payload = {
+def gemini_generate_content(user_message):
+    data = {
         "contents": [
-            {
-                "parts": [
-                    {"text": user_question}
-                ]
-            }
+            {"parts": [{"text": user_message}]}
         ]
     }
-    params = {"key": GEMINI_API_KEY}
+    response = requests.post(GEMINI_URL, json=data)
+    response_json = response.json()
+    if "candidates" not in response_json:
+        return None, response_json
+    gemini_reply = response_json['candidates'][0]['content']['parts'][0]['text']
+    return gemini_reply, None
 
+@app.route('/chatbot', methods=['GET', 'POST'])
+@login_required
+def chatbot():
+    if request.method == 'POST':
+        user_message = request.form.get('message')
+        if user_message:
+            try:
+                reply, error = gemini_generate_content(user_message)
+                if error:
+                    return jsonify({'error': error}), 500
+                return jsonify({'response': reply})
+            except Exception as e:
+                return jsonify({'error': str(e)}), 500
+    return render_template('chatbot.html')
+
+@app.route('/api/alternatif', methods=['POST'])
+def alternatif_malzeme():
+    data = request.get_json()
+    question = data.get('question', '').strip()
+    if not question:
+        return jsonify({'success': False, 'message': 'Malzeme adı boş olamaz.'}), 400
     try:
-        response = requests.post(gemini_url, headers=headers, params=params, json=payload, timeout=15)
-        response.raise_for_status()
-        gemini_data = response.json()
-        answer = gemini_data.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
-        if not answer:
-            answer = "Üzgünüm, bu konuda yardımcı olamadım."
-        return jsonify({'success': True, 'answer': answer})
+        prompt = f"{question} Kısa ve pratik bir şekilde cevapla. Eğer bir malzeme alternatifi soruluyorsa, madde madde öneriler ver."
+        reply, error = gemini_generate_content(prompt)
+        if error:
+            return jsonify({'success': False, 'message': error}), 500
+        return jsonify({'success': True, 'answer': reply})
     except Exception as e:
         return jsonify({'success': False, 'message': f'Hata: {str(e)}'}), 500
+
+@app.route('/ai_recipe', methods=['GET', 'POST'])
+def ai_recipe():
+    ai_recipes = None
+    error = None
+    if request.method == 'POST':
+        ingredients = request.form.get('ingredients', '')
+        if not ingredients.strip():
+            error = 'Lütfen en az bir malzeme girin.'
+        else:
+            try:
+                prompt = f"Aşağıdaki malzemelerle 3 farklı yemek tarifi öner. Her tarif için: isim, malzemeler, hazırlanışı, porsiyon ve süre belirt.\nMalzemeler: {ingredients}"
+                reply, err = gemini_generate_content(prompt)
+                if err:
+                    error = err
+                else:
+                    ai_recipes = reply
+            except Exception as e:
+                error = f'Bir hata oluştu: {str(e)}'
+    return render_template('ai_recipe.html', ai_recipes=ai_recipes, error=error)
 
 if __name__ == '__main__':
     with app.app_context():
