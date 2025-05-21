@@ -85,8 +85,35 @@
     color: #444;
     white-space: pre-line;
 }
+.ai-recipe-cards-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 24px;
+    justify-content: center;
+    margin-top: 2rem;
+}
+.ai-recipe-card-modern {
+    background: #fff;
+    border-radius: 18px;
+    box-shadow: 0 4px 24px rgba(255,107,107,0.13);
+    padding: 2rem 1.5rem;
+    width: 340px;
+    min-height: 220px;
+    display: flex;
+    flex-direction: column;
+    transition: box-shadow 0.2s, transform 0.2s;
+    color: #444;
+    font-size: 1.08rem;
+    white-space: pre-line;
+}
+.ai-recipe-card-modern:hover {
+    box-shadow: 0 8px 32px rgba(255,107,107,0.18);
+    transform: translateY(-4px) scale(1.03);
+}
 @media (max-width: 900px) {
     .ai-recipe-card { max-width: 98vw; }
+    .ai-recipe-cards-container { gap: 12px; }
+    .ai-recipe-card-modern { width: 98vw; }
 }
 @media (max-width: 600px) {
     .ai-recipe-card { padding: 1.2rem 0.5rem; }
@@ -108,6 +135,112 @@ body {
     position: relative;
     width: 100%;
 }
+.ai-explanation-text {
+    color: #333;
+    font-weight: 600;
+    background: none;
+    margin: 1.2rem 0 0.5rem 0;
+    font-size: 1.08rem;
+    text-align: left;
+    padding: 0;
+}
+.ai-recipe-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 32px;
+    margin-top: 2rem;
+    justify-items: stretch;
+}
+.ai-recipe-card-modern {
+    background: #fff;
+    border-radius: 18px;
+    box-shadow: 0 4px 24px rgba(255,107,107,0.13);
+    padding: 2rem 1.5rem;
+    min-height: 220px;
+    display: flex;
+    flex-direction: column;
+    transition: box-shadow 0.2s, transform 0.2s;
+    color: #444;
+    font-size: 1.08rem;
+    white-space: normal;
+    position: relative;
+}
+.ai-recipe-card-modern:hover {
+    box-shadow: 0 8px 32px rgba(255,107,107,0.18);
+    transform: translateY(-4px) scale(1.03);
+}
+.ai-recipe-title {
+    font-size: 1.18rem;
+    font-weight: 700;
+    color: #FF6B6B;
+    margin-bottom: 0.7rem;
+    letter-spacing: 0.01em;
+}
+.ai-recipe-section {
+    margin-bottom: 0.7rem;
+}
+.ai-recipe-section-title {
+    font-weight: 600;
+    color: #FF8C8C;
+    font-size: 1.01rem;
+}
+.ai-recipe-meta {
+    display: flex;
+    gap: 1.2rem;
+    margin-top: auto;
+    font-size: 1.01rem;
+    color: #888;
+    align-items: center;
+}
+.ai-recipe-meta i {
+    color: #FFB6B6;
+    margin-right: 0.3em;
+}
+@media (max-width: 1100px) {
+    .ai-recipe-cards-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 700px) {
+    .ai-recipe-cards-grid { grid-template-columns: 1fr; }
+}
+.ai-recipe-form-container {
+    max-width: 750px;
+    margin: 0 auto 2rem auto;
+    background: none;
+    padding: 0;
+}
+.ai-recipe-cards-outer {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    margin-bottom: 2rem;
+}
+.ai-recipe-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 32px;
+    max-width: 1200px;
+    width: 100%;
+    justify-items: stretch;
+}
+.btn-try-recipe {
+    margin-top: 1.2rem;
+    background: linear-gradient(90deg, #FF6B6B 0%, #FFB6B6 100%);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    padding: 0.7rem 1.6rem;
+    font-size: 1.05rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.13s;
+    box-shadow: 0 2px 8px #ffb6b622;
+    display: block;
+    width: 100%;
+}
+.btn-try-recipe:hover {
+    background: linear-gradient(90deg, #FF6B6B 0%, #FF8C8C 100%);
+    transform: scale(1.04);
+}
 </style>
 
 <div class="ai-recipe-hero">
@@ -118,7 +251,7 @@ body {
     <p style="color:#888; font-size:1.1rem;">Malzemelerini yaz, yapay zekadan yaratıcı tarif önerileri al!</p>
 </div>
 
-<div class="ai-recipe-card">
+<div class="ai-recipe-form-container">
     <form method="POST" class="ai-recipe-form">
         <label for="ingredients">Malzemelerinizi girin:</label>
         <textarea id="ingredients" name="ingredients" required>{{ request.form.ingredients or '' }}</textarea>
@@ -126,14 +259,118 @@ body {
             <button type="submit" class="ai-recipe-btn"><i class="fas fa-magic"></i> Tarif Öner</button>
         </div>
     </form>
+    {% if ai_explanation %}
+    <div class="ai-explanation-text">{{ ai_explanation }}</div>
+    {% endif %}
     {% if error %}
     <div class="ai-recipe-error">{{ error }}</div>
     {% endif %}
-    {% if ai_recipes %}
-    <div class="ai-recipe-result-card">
-        <strong><i class="fas fa-utensils"></i> AI Tarif Önerileri</strong>
-        <div style="margin-top:0.7rem;">{{ ai_recipes }}</div>
-    </div>
-    {% endif %}
 </div>
+{% if ai_recipes %}
+<div class="ai-recipe-cards-outer">
+    <div class="ai-recipe-cards-grid">
+        {% for card in ai_recipes %}
+            <div class="ai-recipe-card-modern">
+                <div class="ai-recipe-title">{{ card['title'] }}</div>
+                <div class="ai-recipe-section">
+                    <strong>Malzemeler:</strong><br>{{ card['ingredients']|replace('\n', '<br>')|safe }}
+                </div>
+                <div class="ai-recipe-section">
+                    <strong>Hazırlanışı:</strong><br>{{ card['instructions']|replace('\n', '<br>')|safe }}
+                </div>
+                <div class="ai-recipe-info-row">
+                    {% if card['serving_size'] %}
+                    <span class="ai-recipe-info"><i class="fas fa-user-friends"></i> {{ card['serving_size'] }}</span>
+                    {% endif %}
+                    {% if card['cooking_time'] %}
+                    <span class="ai-recipe-info"><i class="fas fa-clock"></i> {{ card['cooking_time'] }}</span>
+                    {% endif %}
+                    {% if card['preparation_time'] %}
+                    <span class="ai-recipe-info"><i class="fas fa-hourglass-half"></i> {{ card['preparation_time'] }}</span>
+                    {% endif %}
+                </div>
+                <button class="btn-try-recipe" 
+                    data-title="{{ card['title'] }}"
+                    data-ingredients="{{ card['ingredients'] }}"
+                    data-instructions="{{ card['instructions'] }}"
+                    data-serving_size="{{ card['serving_size'] }}"
+                    data-cooking_time="{{ card['cooking_time'] }}"
+                    data-preparation_time="{{ card['preparation_time'] }}">
+                    <i class="fas fa-check"></i> Tarifi Deneyeceğim
+                </button>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+<div id="try-toast" class="try-toast"></div>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.btn-try-recipe').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            const title = this.getAttribute('data-title');
+            const ingredients = this.getAttribute('data-ingredients');
+            const instructions = this.getAttribute('data-instructions');
+            const serving_size = this.getAttribute('data-serving_size');
+            const cooking_time = this.getAttribute('data-cooking_time');
+            const preparation_time = this.getAttribute('data-preparation_time');
+            fetch('/add_to_try_list', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify({ title, ingredients, instructions, serving_size, cooking_time, preparation_time })
+            })
+            .then(res => res.json())
+            .then(data => {
+                const toast = document.getElementById('try-toast');
+                toast.textContent = data.message;
+                toast.className = 'try-toast ' + (data.success ? 'success' : 'error');
+                toast.style.display = 'block';
+                setTimeout(() => { toast.style.display = 'none'; }, 2500);
+            })
+            .catch(() => {
+                const toast = document.getElementById('try-toast');
+                toast.textContent = 'Bir hata oluştu!';
+                toast.className = 'try-toast error';
+                toast.style.display = 'block';
+                setTimeout(() => { toast.style.display = 'none'; }, 2500);
+            });
+        });
+    });
+});
+</script>
+<style>
+.try-toast {
+    display: none;
+    position: fixed;
+    left: 50%;
+    bottom: 40px;
+    transform: translateX(-50%);
+    min-width: 260px;
+    max-width: 90vw;
+    background: #fff;
+    color: #444;
+    font-weight: 600;
+    border-radius: 12px;
+    box-shadow: 0 4px 24px rgba(255,107,107,0.13);
+    padding: 1.1rem 2.2rem;
+    font-size: 1.08rem;
+    z-index: 9999;
+    text-align: center;
+    border: 2px solid #FFB6B6;
+    transition: all 0.2s;
+}
+.try-toast.success {
+    border-color: #4CAF50;
+    color: #388e3c;
+    background: #eaffea;
+}
+.try-toast.error {
+    border-color: #FF6B6B;
+    color: #d32f2f;
+    background: #fff0f0;
+}
+</style>
 {% endblock %} 

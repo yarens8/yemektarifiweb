@@ -1062,9 +1062,67 @@ def alternatif_malzeme():
     except Exception as e:
         return jsonify({'success': False, 'message': f'Hata: {str(e)}'}), 500
 
+def parse_ai_recipes(ai_text):
+    import re
+    # '**Tarif' ile başlayanları böl
+    cards = re.split(r'\*\*Tarif \d+[:：]', ai_text)
+    explanation = cards[0].strip() if cards and cards[0].strip() else None
+    recipes = []
+    for card in cards[1:]:
+        card = card.strip()
+        if not card:
+            continue
+        # Başlık
+        if '**İsim:**' in card:
+            title = card.split('**İsim:**')[-1].split('\n')[0].strip()
+        else:
+            title = card.split('\n')[0].strip()
+        # Malzemeler
+        if '**Malzemeler:**' in card and '**Hazırlanışı:**' in card:
+            malzeme_raw = card.split('**Malzemeler:**')[-1].split('**Hazırlanışı:**')[0].strip()
+        else:
+            malzeme_raw = ''
+        # Hazırlanış
+        if '**Hazırlanışı:**' in card and '**Porsiyon:**' in card:
+            hazirlanis_raw = card.split('**Hazırlanışı:**')[-1].split('**Porsiyon:**')[0].strip()
+        elif '**Hazırlanışı:**' in card:
+            hazirlanis_raw = card.split('**Hazırlanışı:**')[-1].strip()
+        else:
+            hazirlanis_raw = ''
+        # Porsiyon
+        if '**Porsiyon:**' in card and '**Süre:**' in card:
+            porsiyon_raw = card.split('**Porsiyon:**')[-1].split('**Süre:**')[0].strip()
+        elif '**Porsiyon:**' in card:
+            porsiyon_raw = card.split('**Porsiyon:**')[-1].strip()
+        else:
+            porsiyon_raw = ''
+        # Süre
+        if '**Süre:**' in card:
+            sure_raw = card.split('**Süre:**')[-1].strip()
+        else:
+            sure_raw = ''
+        # Hazırlama Süresi
+        if '**Hazırlama Süresi:**' in card:
+            prep_raw = card.split('**Hazırlama Süresi:**')[-1].split('\n')[0].strip()
+        elif '**Hazırlık:**' in card:
+            prep_raw = card.split('**Hazırlık:**')[-1].split('\n')[0].strip()
+        else:
+            prep_raw = ''
+        # Otomatik madde madde ayırma yok, metinler olduğu gibi kaydedilecek
+        recipes.append({
+            'title': title,
+            'ingredients': malzeme_raw,
+            'instructions': hazirlanis_raw,
+            'serving_size': porsiyon_raw.split('\n')[0],
+            'cooking_time': sure_raw.split('\n')[0],
+            'preparation_time': prep_raw
+        })
+    return explanation, recipes
+
 @app.route('/ai_recipe', methods=['GET', 'POST'])
 def ai_recipe():
     ai_recipes = None
+    ai_explanation = None
     error = None
     if request.method == 'POST':
         ingredients = request.form.get('ingredients', '')
@@ -1072,15 +1130,106 @@ def ai_recipe():
             error = 'Lütfen en az bir malzeme girin.'
         else:
             try:
-                prompt = f"Aşağıdaki malzemelerle 3 farklı yemek tarifi öner. Her tarif için: isim, malzemeler, hazırlanışı, porsiyon ve süre belirt.\nMalzemeler: {ingredients}"
+                prompt = f"Aşağıdaki malzemelerle 10 farklı yaratıcı yemek tarifi öner. Her tarif için: isim, malzemeler, hazırlanışı, porsiyon, hazırlama süresi ve pişirme süresi belirt.\nHer tarife '**Tarif X:' başlığı ile başla.\nMalzemeler: {ingredients}"
                 reply, err = gemini_generate_content(prompt)
                 if err:
                     error = err
                 else:
-                    ai_recipes = reply
+                    ai_explanation, ai_recipes = parse_ai_recipes(reply)
             except Exception as e:
                 error = f'Bir hata oluştu: {str(e)}'
-    return render_template('ai_recipe.html', ai_recipes=ai_recipes, error=error)
+    return render_template('ai_recipe.html', ai_recipes=ai_recipes, ai_explanation=ai_explanation, error=error)
+
+# Yeni eklenen UserRecipeList modeli
+class UserRecipeList(db.Model):
+    __tablename__ = 'UserRecipeList'
+    __table_args__ = {'schema': 'dbo'}
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('dbo.User.id'), nullable=False)
+    recipe_id = db.Column(db.Integer, db.ForeignKey('dbo.Recipe.id'), nullable=True)  # AI tarifler için nullable
+    status = db.Column(db.String(32), default='pending')
+    image_url = db.Column(db.String(255))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    ai_title = db.Column(db.String(100))
+    ai_ingredients = db.Column(db.Text)
+    ai_instructions = db.Column(db.Text)
+    ai_serving_size = db.Column(db.String(50))
+    ai_cooking_time = db.Column(db.String(50))
+    ai_preparation_time = db.Column(db.String(50))
+
+    user = db.relationship('User', backref='user_recipe_list')
+    recipe = db.relationship('Recipe', backref='user_recipe_list')
+
+@app.route('/add_to_try_list', methods=['POST'])
+@login_required
+def add_to_try_list():
+    data = request.get_json()
+    title = data.get('title')
+    ingredients = data.get('ingredients')
+    instructions = data.get('instructions')
+    serving_size = data.get('serving_size')
+    cooking_time = data.get('cooking_time')
+    preparation_time = data.get('preparation_time')
+    if not title or not ingredients or not instructions:
+        return jsonify({'success': False, 'message': 'Eksik veri'}), 400
+    existing = UserRecipeList.query.filter_by(user_id=current_user.id, status='pending', ai_title=title).first()
+    if existing:
+        return jsonify({'success': False, 'message': 'Bu tarif zaten listenizde!'}), 409
+    new_entry = UserRecipeList(
+        user_id=current_user.id,
+        recipe_id=None,  # AI tarifleri için None
+        status='pending',
+        ai_title=title,
+        ai_ingredients=ingredients,
+        ai_instructions=instructions,
+        ai_serving_size=serving_size,
+        ai_cooking_time=cooking_time,
+        ai_preparation_time=preparation_time
+    )
+    db.session.add(new_entry)
+    db.session.commit()
+    return jsonify({'success': True, 'message': 'Tarif listenize eklendi!'})
+
+@app.route('/to-try-recipes')
+@login_required
+def to_try_recipes():
+    try_list = UserRecipeList.query.filter_by(user_id=current_user.id, status='pending').order_by(UserRecipeList.created_at.desc()).all()
+    return render_template('to_try_recipes.html', try_list=try_list)
+
+@app.route('/mark_tried_recipe', methods=['POST'])
+@login_required
+def mark_tried_recipe():
+    data = request.get_json()
+    try_id = data.get('id')
+    entry = UserRecipeList.query.filter_by(id=try_id, user_id=current_user.id, status='pending').first()
+    if not entry:
+        return jsonify({'success': False, 'message': 'Tarif bulunamadı veya zaten işaretlenmiş.'}), 404
+    # Eğer AI tarifi ise Recipe tablosuna ekle
+    if entry.ai_title and entry.ai_instructions:
+        from sqlalchemy.exc import SQLAlchemyError
+        try:
+            new_recipe = Recipe(
+                title=entry.ai_title,
+                ingredients=entry.ai_ingredients or '',
+                ingredients_sections=json.dumps([{'title': 'Malzemeler', 'ingredients': [entry.ai_ingredients or '']}]),
+                instructions=entry.ai_instructions or '',
+                serving_size=entry.ai_serving_size,
+                cooking_time=entry.ai_cooking_time,
+                preparation_time=entry.ai_preparation_time,
+                user_id=current_user.id,
+                category_id=9,  # Yapay Zeka Tariflerim
+                username=current_user.username
+            )
+            db.session.add(new_recipe)
+            db.session.flush()  # id almak için
+            entry.recipe_id = new_recipe.id
+        except SQLAlchemyError as e:
+            db.session.rollback()
+            return jsonify({'success': False, 'message': f'Tarif eklenirken hata: {str(e)}'}), 500
+    entry.status = 'tried'
+    db.session.commit()
+    return jsonify({'success': True, 'message': 'Tarif başarıyla "Denedim ve Beğendim" olarak işaretlendi ve Yapay Zeka Tariflerim kategorisine eklendi!'})
 
 if __name__ == '__main__':
     with app.app_context():

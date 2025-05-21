@@ -101,31 +101,8 @@
                     <i class="fas fa-shopping-basket"></i>
                     Malzemeler
                 </h2>
-                
                 <div class="ingredients-container">
-                    {% if recipe.ingredients_sections %}
-                        {% set sections = recipe.ingredients_sections|from_json %}
-                        {% for section_name, ingredients in sections.items() %}
-                            <div class="ingredient-card">
-                                <div class="ingredient-card-header">
-                                    <h3 class="ingredient-card-title">
-                                        <i class="fas fa-utensils"></i>
-                                        {{ section_name }}
-                                    </h3>
-                                </div>
-                                <div class="ingredient-card-body">
-                                    <ul class="ingredient-card-list">
-                                        {% for ingredient in ingredients %}
-                                            <li class="ingredient-card-item">
-                                                <i class="fas fa-check"></i>
-                                                <span>{{ ingredient }}</span>
-                                            </li>
-                                        {% endfor %}
-                                    </ul>
-                                </div>
-                            </div>
-                        {% endfor %}
-                    {% else %}
+                    {% if recipe.category_id == 9 or recipe.category.name == 'Yapay Zeka Tariflerim' %}
                         <div class="ingredient-card">
                             <div class="ingredient-card-header">
                                 <h3 class="ingredient-card-title">
@@ -135,17 +112,86 @@
                             </div>
                             <div class="ingredient-card-body">
                                 <ul class="ingredient-card-list">
-                                    {% for ingredient in recipe.ingredients.split('\n') %}
-                                        {% if ingredient.strip() %}
+                                    {% for ingredient in recipe.ingredients.replace('\n', ',').split(',') %}
+                                        {% set ing = ingredient.strip() %}
+                                        {% if ing and ing != '*' %}
                                             <li class="ingredient-card-item">
                                                 <i class="fas fa-check"></i>
-                                                <span>{{ ingredient.strip() }}</span>
+                                                <span>{{ ing }}</span>
                                             </li>
                                         {% endif %}
                                     {% endfor %}
                                 </ul>
                             </div>
                         </div>
+                    {% else %}
+                        {% if recipe.ingredients_sections %}
+                            {% set sections = recipe.ingredients_sections|from_json %}
+                            {% if sections is mapping %}
+                                {% for section_name, ingredients in sections.items() %}
+                                    <div class="ingredient-card">
+                                        <div class="ingredient-card-header">
+                                            <h3 class="ingredient-card-title">
+                                                <i class="fas fa-utensils"></i>
+                                                {{ section_name }}
+                                            </h3>
+                                        </div>
+                                        <div class="ingredient-card-body">
+                                            <ul class="ingredient-card-list">
+                                                {% for ingredient in ingredients %}
+                                                    <li class="ingredient-card-item">
+                                                        <i class="fas fa-check"></i>
+                                                        <span>{{ ingredient }}</span>
+                                                    </li>
+                                                {% endfor %}
+                                            </ul>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            {% else %}
+                                {% for section in sections %}
+                                    <div class="ingredient-card">
+                                        <div class="ingredient-card-header">
+                                            <h3 class="ingredient-card-title">
+                                                <i class="fas fa-utensils"></i>
+                                                {{ section.title }}
+                                            </h3>
+                                        </div>
+                                        <div class="ingredient-card-body">
+                                            <ul class="ingredient-card-list">
+                                                {% for ingredient in section.ingredients %}
+                                                    <li class="ingredient-card-item">
+                                                        <i class="fas fa-check"></i>
+                                                        <span>{{ ingredient }}</span>
+                                                    </li>
+                                                {% endfor %}
+                                            </ul>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            {% endif %}
+                        {% else %}
+                            <div class="ingredient-card">
+                                <div class="ingredient-card-header">
+                                    <h3 class="ingredient-card-title">
+                                        <i class="fas fa-utensils"></i>
+                                        Malzemeler
+                                    </h3>
+                                </div>
+                                <div class="ingredient-card-body">
+                                    <ul class="ingredient-card-list">
+                                        {% for ingredient in recipe.ingredients.split('\n') %}
+                                            {% if ingredient.strip() %}
+                                                <li class="ingredient-card-item">
+                                                    <i class="fas fa-check"></i>
+                                                    <span>{{ ingredient.strip() }}</span>
+                                                </li>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                            </div>
+                        {% endif %}
                     {% endif %}
                 </div>
             </div>

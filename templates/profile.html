@@ -35,6 +35,13 @@
                         <span class="stat-value">{{ favorite_recipes|length }}</span>
                         <span class="stat-label">FAVORİ</span>
                     </div>
+                    <div class="stat-divider"></div>
+                    {% set to_try_count = current_user.user_recipe_list|selectattr('status', 'equalto', 'pending')|list|length %}
+                    <a href="{{ url_for('to_try_recipes') }}" class="stat-item stat-link">
+                        <i class="fas fa-hourglass-half"></i>
+                        <span class="stat-value">{{ to_try_count }}</span>
+                        <span class="stat-label">DENENECEK</span>
+                    </a>
                 </div>
             </div>
         </div>
@@ -61,6 +68,10 @@
                 <i class="fas fa-heart"></i>
                 Favorilerim <span class="tab-count">{{ favorite_recipes|length }}</span>
             </button>
+            <a href="{{ url_for('to_try_recipes') }}" class="tab-btn-link">
+                <i class="fas fa-hourglass-half"></i>
+                Denenecek Tariflerim
+            </a>
         </div>
 
         <div class="tab-content">
@@ -74,7 +85,7 @@
                                 {% if current_user.is_authenticated %}
                                 <button class="favorite-btn {% if recipe in current_user.favorites %}active{% endif %}"
                                         style="position:absolute;top:14px;right:14px;background:rgba(255,255,255,0.95);box-shadow:0 2px 8px #ff6b6b22;border-radius:50%;width:40px;height:40px;display:flex;align-items:center;justify-content:center;font-size:1.4rem;z-index:10;transition:all 0.18s;"
-                                        onclick="toggleFavorite({{ recipe.id }}, this)">
+                                        onclick="toggleFavorite('{{ recipe.id }}', this)">
                                     <i class="fas fa-heart"></i>
                                 </button>
                                 {% endif %}
@@ -142,7 +153,7 @@
                                 {% if current_user.is_authenticated %}
                                 <button class="favorite-btn {% if recipe in current_user.favorites %}active{% endif %}"
                                         style="position:absolute;top:14px;right:14px;background:rgba(255,255,255,0.95);box-shadow:0 2px 8px #ff6b6b22;border-radius:50%;width:40px;height:40px;display:flex;align-items:center;justify-content:center;font-size:1.4rem;z-index:10;transition:all 0.18s;"
-                                        onclick="toggleFavorite({{ recipe.id }}, this)">
+                                        onclick="toggleFavorite('{{ recipe.id }}', this)">
                                     <i class="fas fa-heart"></i>
                                 </button>
                                 {% endif %}
@@ -848,6 +859,51 @@
 
 .btn-confirm:hover {
     background: #c82333;
+}
+
+.tab-btn-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: linear-gradient(90deg, #FFB6B6 0%, #FF6B6B 100%);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    padding: 0.7rem 1.6rem;
+    font-size: 1.05rem;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    margin-left: 0.7rem;
+    transition: background 0.15s, transform 0.13s;
+    box-shadow: 0 2px 8px #ffb6b622;
+}
+.tab-btn-link:hover {
+    background: linear-gradient(90deg, #FF6B6B 0%, #FF8C8C 100%);
+    color: #fff;
+    transform: scale(1.04);
+}
+
+.stat-link {
+    text-decoration: none;
+    color: inherit;
+    transition: background 0.15s, box-shadow 0.13s, transform 0.13s;
+    cursor: pointer;
+    background: linear-gradient(90deg, #FFB6B6 0%, #FF6B6B 100%);
+    color: #fff !important;
+    border-radius: 12px;
+    padding: 1.1rem 2.2rem;
+    margin-left: 0.7rem;
+    box-shadow: 0 2px 8px #ffb6b622;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.375rem;
+}
+.stat-link:hover {
+    background: linear-gradient(90deg, #FF6B6B 0%, #FF8C8C 100%);
+    color: #fff;
+    transform: scale(1.04);
 }
 </style>
 

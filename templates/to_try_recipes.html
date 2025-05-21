@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="to-try-hero">
+    <h2><i class="fas fa-hourglass-half"></i> Denenecek Tariflerim</h2>
+    <p class="to-try-desc">Yapay zekadan eklediğiniz ve denemek istediğiniz tarifler burada!</p>
+</div>
+{% if try_list %}
+<div class="to-try-cards-grid">
+    {% for item in try_list %}
+    <div class="to-try-card">
+        <div class="to-try-title">{{ item.ai_title or 'AI Tarifi' }}</div>
+        <div class="to-try-date"><i class="far fa-calendar-alt"></i> {{ item.created_at.strftime('%d.%m.%Y %H:%M') }}</div>
+        {% if item.ai_ingredients %}
+        <div class="to-try-section"><strong>Malzemeler:</strong><br>{{ item.ai_ingredients|replace('\n', '<br>')|safe }}</div>
+        {% endif %}
+        {% if item.ai_instructions %}
+        <div class="to-try-section"><strong>Hazırlanışı:</strong><br>{{ item.ai_instructions|replace('\n', '<br>')|safe }}</div>
+        {% endif %}
+        <div class="to-try-info-row">
+            {% if item.ai_serving_size %}
+            <span class="to-try-info"><i class="fas fa-user-friends"></i> {{ item.ai_serving_size }}</span>
+            {% endif %}
+            {% if item.ai_cooking_time %}
+            <span class="to-try-info"><i class="fas fa-clock"></i> {{ item.ai_cooking_time }}</span>
+            {% endif %}
+        </div>
+        <button class="btn-tried" data-id="{{ item.id }}">
+            <i class="fas fa-check"></i> Denedim ve Beğendim
+        </button>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="empty-state">
+    <div class="empty-icon">
+        <i class="fas fa-hourglass-half"></i>
+    </div>
+    <h3>Henüz denenecek tarif eklemediniz</h3>
+    <p>AI ile tarif ekleyip listenize ekleyebilirsiniz.</p>
+</div>
+{% endif %}
+<style>
+.to-try-hero {
+    text-align: center;
+    margin-bottom: 2.5rem;
+}
+.to-try-hero h2 {
+    color: #FF6B6B;
+    font-weight: 800;
+    font-size: 2.1rem;
+    margin-bottom: 0.3rem;
+}
+.to-try-desc {
+    color: #888;
+    font-size: 1.1rem;
+    margin-bottom: 0.5rem;
+}
+.to-try-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2.2rem;
+    justify-items: center;
+    margin: 0 auto;
+    max-width: 1200px;
+}
+@media (max-width: 1100px) {
+    .to-try-cards-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 700px) {
+    .to-try-cards-grid { grid-template-columns: 1fr; }
+}
+.to-try-card {
+    background: #fff;
+    border-radius: 18px;
+    box-shadow: 0 4px 24px rgba(255,107,107,0.13);
+    padding: 2rem 1.5rem 1.5rem 1.5rem;
+    min-width: 320px;
+    max-width: 370px;
+    min-height: 220px;
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 1.2rem;
+    color: #444;
+    font-size: 1.08rem;
+    position: relative;
+}
+.to-try-title {
+    font-size: 1.18rem;
+    font-weight: 700;
+    color: #FF6B6B;
+    margin-bottom: 0.7rem;
+    letter-spacing: 0.01em;
+}
+.to-try-date {
+    color: #888;
+    font-size: 0.98rem;
+    margin-bottom: 0.7rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+.to-try-section {
+    margin-bottom: 0.7rem;
+}
+.to-try-info-row {
+    display: flex;
+    gap: 1.2rem;
+    margin-bottom: 1.1rem;
+    font-size: 1.01rem;
+    color: #888;
+    align-items: center;
+}
+.to-try-info i {
+    color: #FFB6B6;
+    margin-right: 0.3em;
+}
+.btn-tried {
+    margin-top: auto;
+    background: linear-gradient(90deg, #4CAF50 0%, #81C784 100%);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    padding: 0.7rem 1.6rem;
+    font-size: 1.05rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.13s;
+    box-shadow: 0 2px 8px #4caf5022;
+    display: block;
+    width: 100%;
+}
+.btn-tried:hover {
+    background: linear-gradient(90deg, #388e3c 0%, #66bb6a 100%);
+    transform: scale(1.04);
+}
+</style>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.btn-tried').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            const id = this.getAttribute('data-id');
+            fetch('/mark_tried_recipe', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    this.textContent = '✔️ Denendi!';
+                    this.disabled = true;
+                    this.style.background = '#eaffea';
+                    this.style.color = '#388e3c';
+                } else {
+                    alert(data.message || 'Bir hata oluştu!');
+                }
+            })
+            .catch(() => {
+                alert('Bir hata oluştu!');
+            });
+        });
+    });
+});
+</script>
+{% endblock %} 
