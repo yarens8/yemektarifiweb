@@ -127,7 +127,9 @@
                     <select id="categoryFilter" class="form-select">
                         <option value="">Tümü</option>
                         {% for category in categories %}
-                        <option value="{{ category.id }}">{{ category.name }}</option>
+                            {% if category.name != 'Tümü' and category.name != 'Yapay Zeka Tariflerim' %}
+                                <option value="{{ category.id }}">{{ category.name }}</option>
+                            {% endif %}
                         {% endfor %}
                     </select>
                 </div>
@@ -138,10 +140,9 @@
                     </label>
                     <select id="cookingTimeFilter" class="form-select">
                         <option value="">Tümü</option>
-                        <option value="15">15 dakika veya az</option>
-                        <option value="30">30 dakika veya az</option>
-                        <option value="45">45 dakika veya az</option>
-                        <option value="60">1 saat veya az</option>
+                        <option value="under_30">30 dakikadan az</option>
+                        <option value="30_60">30-60 dakika</option>
+                        <option value="over_60">60 dakikadan fazla</option>
                     </select>
                 </div>
                 <div class="filter-group">

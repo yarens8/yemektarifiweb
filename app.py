@@ -381,7 +381,10 @@ def category_view(category_id):
     # Her tarif için ingredients_preview oluştur
     for recipe in recipes:
         try:
-            sections = json.loads(recipe.ingredients_sections)
+            if recipe.ingredients_sections:
+                sections = json.loads(recipe.ingredients_sections)
+            else:
+                sections = [{'title': 'Malzemeler', 'ingredients': recipe.ingredients.split('\n')}]
             if isinstance(sections, list):
                 all_ingredients = []
                 for section in sections:
@@ -813,28 +816,68 @@ def suggest_recipes():
         recipes_query = recipes_query.filter_by(category_id=filters['category_id'])
     
     # Pişirme süresi filtresi
-    if filters.get('max_cooking_time'):
-        max_time = int(filters['max_cooking_time'])
-        recipes_query = recipes_query.filter(
-            Recipe.cooking_time.ilike(f'%{max_time} dakika%') |
-            Recipe.cooking_time.ilike(f'%{max_time}dk%')
-        )
+    time_filter = filters.get('max_cooking_time')
+    if time_filter:
+        all_recipes = recipes_query.all()
+        filtered_recipes = []
+        for recipe in all_recipes:
+            # Süreyi ayıkla (örn: '25 dakika', '1 saat', '45 dk')
+            import re
+            time_str = recipe.cooking_time.lower() if recipe.cooking_time else ''
+            dakika = None
+            # 'X saat' veya 'X saat Y dakika' varsa
+            saat_match = re.search(r'(\d+)\s*saat', time_str)
+            dakika_match = re.search(r'(\d+)\s*dakika', time_str)
+            dk_match = re.search(r'(\d+)\s*dk', time_str)
+            if saat_match:
+                dakika = int(saat_match.group(1)) * 60
+                if dakika_match:
+                    dakika += int(dakika_match.group(1))
+            elif dakika_match:
+                dakika = int(dakika_match.group(1))
+            elif dk_match:
+                dakika = int(dk_match.group(1))
+            # Aralığa göre filtrele
+            if dakika is not None:
+                if time_filter == 'under_30' and dakika < 30:
+                    filtered_recipes.append(recipe)
+                elif time_filter == '30_60' and 30 <= dakika <= 60:
+                    filtered_recipes.append(recipe)
+                elif time_filter == 'over_60' and dakika > 60:
+                    filtered_recipes.append(recipe)
+        recipes_query = filtered_recipes
+    else:
+        recipes_query = recipes_query.all()
     
     # Porsiyon filtresi
-    if filters.get('serving_size'):
-        serving_size = filters['serving_size']
-        if serving_size == '1-2':
-            recipes_query = recipes_query.filter(Recipe.serving_size.ilike('%1-2%') | Recipe.serving_size.ilike('%1%') | Recipe.serving_size.ilike('%2%'))
-        elif serving_size == '3-4':
-            recipes_query = recipes_query.filter(Recipe.serving_size.ilike('%3-4%') | Recipe.serving_size.ilike('%3%') | Recipe.serving_size.ilike('%4%'))
-        elif serving_size == '5-6':
-            recipes_query = recipes_query.filter(Recipe.serving_size.ilike('%5-6%') | Recipe.serving_size.ilike('%5%') | Recipe.serving_size.ilike('%6%'))
-        elif serving_size == '6+':
-            recipes_query = recipes_query.filter(Recipe.serving_size.ilike('%6%') | Recipe.serving_size.ilike('%7%') | Recipe.serving_size.ilike('%8%'))
+    serving_size_filter = filters.get('serving_size')
+    if serving_size_filter:
+        porsiyon_araliklari = {
+            '1-2': ['1-2', '1', '2'],
+            '3-4': ['3-4', '3', '4'],
+            '5-6': ['5-6', '5', '6'],
+            '6+': ['6', '7', '8', '9', '10', '11', '12']
+        }
+        aralik = porsiyon_araliklari.get(serving_size_filter, [])
+        def porsiyon_uyuyor(mu):
+            val = (getattr(mu, 'serving_size', None) or '').lower()
+            return any(a in val for a in aralik)
+        if isinstance(recipes_query, list):
+            recipes_query = [r for r in recipes_query if porsiyon_uyuyor(r)]
+        else:
+            # SQLAlchemy Query ise eski filtreyi uygula
+            if serving_size_filter == '1-2':
+                recipes_query = recipes_query.filter(Recipe.serving_size.ilike('%1-2%') | Recipe.serving_size.ilike('%1%') | Recipe.serving_size.ilike('%2%'))
+            elif serving_size_filter == '3-4':
+                recipes_query = recipes_query.filter(Recipe.serving_size.ilike('%3-4%') | Recipe.serving_size.ilike('%3%') | Recipe.serving_size.ilike('%4%'))
+            elif serving_size_filter == '5-6':
+                recipes_query = recipes_query.filter(Recipe.serving_size.ilike('%5-6%') | Recipe.serving_size.ilike('%5%') | Recipe.serving_size.ilike('%6%'))
+            elif serving_size_filter == '6+':
+                recipes_query = recipes_query.filter(Recipe.serving_size.ilike('%6%') | Recipe.serving_size.ilike('%7%') | Recipe.serving_size.ilike('%8%'))
     
     # Tüm tarifleri al ve eşleşme yüzdesini hesapla
     suggestions = []
-    for recipe in recipes_query.all():
+    for recipe in recipes_query:
         # Tarif malzemelerini normalize et
         recipe_ingredients_text = recipe.ingredients.lower()
         
